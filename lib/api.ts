@@ -1,4 +1,4 @@
-import type { DashboardStats, OrderPayload, Product } from "@/lib/types";
+import type { AdminOrder, AdminProduct, DashboardStats, OrderPayload, OrderStatus, Product } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -45,8 +45,41 @@ export const api = {
   adminStats: (token: string) =>
     request<DashboardStats>("/admin/stats", {
       headers: { Authorization: `Bearer ${token}` }
+    }),
+  adminProducts: (token: string) =>
+    request<AdminProduct[]>("/admin/products", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  createAdminProduct: (token: string, payload: AdminProductFormPayload) =>
+    request<AdminProduct>("/admin/products", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  updateAdminProduct: (token: string, id: string, payload: AdminProductFormPayload) =>
+    request<AdminProduct>(`/admin/products/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  deleteAdminProduct: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/admin/products/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  adminOrders: (token: string) =>
+    request<AdminOrder[]>("/admin/orders", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  updateOrderStatus: (token: string, id: string, status: OrderStatus) =>
+    request<AdminOrder>(`/admin/orders/${id}/status`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status })
     })
 };
+
+export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency">;
 
 export function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {

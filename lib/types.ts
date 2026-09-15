@@ -31,6 +31,49 @@ export type Product = {
   featured: boolean;
 };
 
+export type AdminProduct = Omit<Product, "category" | "sellerName" | "bulkPricing"> & {
+  category:
+    | "FRUITS"
+    | "GRAINS"
+    | "VEGETABLES"
+    | "LIVESTOCK"
+    | "POULTRY"
+    | "FISH"
+    | "EQUIPMENT"
+    | "PROCESSED_FOODS";
+  sellerName: string;
+  sellerCountry: string;
+  bulkPricing: {
+    minQuantity: number;
+    unitPrice: number;
+  }[];
+};
+
+export type OrderStatus = "PENDING" | "CONFIRMED" | "AWAITING_PAYMENT" | "PAID" | "FULFILLED" | "CANCELLED";
+
+export type AdminOrder = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  deliveryCountry: string;
+  deliveryAddress: string;
+  notes?: string | null;
+  status: OrderStatus;
+  subtotal: number;
+  createdAt: string;
+  items: {
+    id: string;
+    quantity: number;
+    unitPrice: number;
+    product: {
+      name: string;
+      unit: string;
+    };
+  }[];
+};
+
 export type CartItem = {
   product: Product;
   quantity: number;
