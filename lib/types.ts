@@ -70,6 +70,7 @@ export type AdminOrder = {
     product: {
       name: string;
       unit: string;
+      imageUrl: string;
     };
   }[];
 };
@@ -99,3 +100,12 @@ export type OrderPayload = {
     quantity: number;
   }[];
 };
+
+export type OrderConfirmation = {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  subtotal: number;
+};
+
+export type GuestOrder = AdminOrder;

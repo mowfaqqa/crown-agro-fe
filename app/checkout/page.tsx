@@ -63,7 +63,20 @@ export default function CheckoutPage() {
               <div className="mt-6 rounded-lg border border-forest-200 bg-forest-50 p-5">
                 <CheckCircle2 className="text-forest-600" size={28} aria-hidden="true" />
                 <h2 className="mt-3 text-xl font-black text-forest-950">Order request received</h2>
-                <p className="mt-2 text-slate-600">Your request is now in the admin queue. The next milestone will add richer notifications and payment readiness.</p>
+                <p className="mt-2 text-slate-600">Your request is now in the admin queue. Keep this order number for follow-up.</p>
+                <div className="mt-4 grid gap-3 rounded-md bg-white p-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-bold text-slate-500">Order number</p>
+                    <p className="mt-1 text-xl font-black text-forest-950">{order.data.orderNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-500">Subtotal</p>
+                    <p className="mt-1 text-xl font-black text-forest-950">{formatNaira(order.data.subtotal)}</p>
+                  </div>
+                </div>
+                <Link href="/orders/lookup" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-forest-600 px-4 text-sm font-black text-white">
+                  Track this order
+                </Link>
               </div>
             ) : null}
 

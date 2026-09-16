@@ -1,4 +1,4 @@
-import type { AdminOrder, AdminProduct, DashboardStats, OrderPayload, OrderStatus, Product } from "@/lib/types";
+import type { AdminOrder, AdminProduct, DashboardStats, GuestOrder, OrderConfirmation, OrderPayload, OrderStatus, Product } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -29,10 +29,14 @@ export const api = {
   },
   productBySlug: (slug: string) => request<Product>(`/products/${slug}`),
   createOrder: (payload: OrderPayload) =>
-    request<{ id: string; orderNumber: string }>("/orders", {
+    request<OrderConfirmation>("/orders", {
       method: "POST",
       body: JSON.stringify(payload)
     }),
+  lookupOrder: (orderNumber: string, email: string) => {
+    const params = new URLSearchParams({ orderNumber, email });
+    return request<GuestOrder>(`/orders/lookup?${params.toString()}`);
+  },
   subscribe: (email: string) =>
     request<{ ok: boolean }>("/newsletter", {
       method: "POST",
