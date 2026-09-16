@@ -20,10 +20,11 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
           {[
-            ["Marketplace", "#marketplace"],
-            ["How it works", "#how-it-works"],
-            ["Trust", "#trust"],
-            ["Live hub", "#live-hub"]
+            ["Marketplace", "/marketplace"],
+            ["How it works", "/#how-it-works"],
+            ["Trust", "/#trust"],
+            ["Live hub", "/#live-hub"],
+            ["Track order", "/orders/lookup"]
           ].map(([label, href]) => (
             <Link
               key={href}
@@ -36,14 +37,14 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a
-            href="#marketplace"
+          <Link
+            href="/marketplace"
             className="hidden min-h-11 items-center gap-2 rounded-md border border-forest-100 px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 sm:inline-flex"
           >
             <Search size={17} aria-hidden="true" /> Search
-          </a>
-          <a
-            href="/checkout"
+          </Link>
+          <Link
+            href="/cart"
             className="relative inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-950 px-3 text-sm font-bold text-white transition hover:bg-forest-800"
             aria-label={`Open cart with ${totalItems} item${totalItems === 1 ? "" : "s"}`}
           >
@@ -54,7 +55,7 @@ export function SiteHeader() {
                 {totalItems}
               </span>
             ) : null}
-          </a>
+          </Link>
           <Link
             href="/admin"
             className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex"
