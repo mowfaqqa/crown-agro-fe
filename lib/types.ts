@@ -29,6 +29,7 @@ export type Product = {
     unitPrice: number;
   }[];
   featured: boolean;
+  archivedAt?: string | null;
 };
 
 export type AdminProduct = Omit<Product, "category" | "sellerName" | "bulkPricing"> & {
@@ -60,7 +61,12 @@ export type AdminOrder = {
   deliveryCountry: string;
   deliveryAddress: string;
   notes?: string | null;
+  fulfillmentNotes?: string | null;
   status: OrderStatus;
+  paymentProvider?: string | null;
+  paymentReference?: string | null;
+  paymentUrl?: string | null;
+  paidAt?: string | null;
   subtotal: number;
   createdAt: string;
   items: {

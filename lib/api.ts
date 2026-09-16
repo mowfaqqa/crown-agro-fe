@@ -67,9 +67,14 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload)
     }),
-  deleteAdminProduct: (token: string, id: string) =>
-    request<{ ok: boolean }>(`/admin/products/${id}`, {
-      method: "DELETE",
+  archiveAdminProduct: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/admin/products/${id}/archive`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  unarchiveAdminProduct: (token: string, id: string) =>
+    request<{ ok: boolean }>(`/admin/products/${id}/unarchive`, {
+      method: "PATCH",
       headers: { Authorization: `Bearer ${token}` }
     }),
   adminOrders: (token: string) =>
@@ -81,10 +86,16 @@ export const api = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status })
+    }),
+  updateOrderNotes: (token: string, id: string, fulfillmentNotes: string) =>
+    request<AdminOrder>(`/admin/orders/${id}/notes`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fulfillmentNotes })
     })
 };
 
-export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency">;
+export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency" | "archivedAt">;
 
 export function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {

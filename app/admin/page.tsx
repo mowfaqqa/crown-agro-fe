@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BarChart3, Edit3, LockKeyhole, Package, Plus, Save, ShieldCheck, ShoppingBag, Trash2, TriangleAlert } from "lucide-react";
+import { Archive, BarChart3, Edit3, LockKeyhole, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { api, formatNaira, type AdminProductFormPayload } from "@/lib/api";
@@ -40,6 +40,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>("overview");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<AdminProductFormPayload>(emptyProduct);
+  const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
 
   const login = useMutation({
     mutationFn: () => api.adminLogin(email, password),
@@ -60,13 +61,20 @@ export default function AdminPage() {
       ]);
     }
   });
-  const deleteProduct = useMutation({
-    mutationFn: (id: string) => api.deleteAdminProduct(token ?? "", id),
+  const archiveProduct = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
+      archived ? api.unarchiveAdminProduct(token ?? "", id) : api.archiveAdminProduct(token ?? "", id),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-products", token] }),
         queryClient.invalidateQueries({ queryKey: ["admin-stats", token] })
       ]);
+    }
+  });
+  const updateNotes = useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes: string }) => api.updateOrderNotes(token ?? "", id, notes),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
     }
   });
   const updateStatus = useMutation({
@@ -79,7 +87,7 @@ export default function AdminPage() {
     }
   });
 
-  const lowStock = useMemo(() => products.data?.filter((product) => product.stockQuantity <= 20) ?? [], [products.data]);
+  const lowStock = useMemo(() => products.data?.filter((product) => !product.archivedAt && product.stockQuantity <= 20) ?? [], [products.data]);
 
   function editProduct(product: AdminProduct) {
     setEditingId(product.id);
@@ -228,6 +236,7 @@ export default function AdminPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-lg font-black text-forest-950">{product.name}</h3>
                         {product.featured ? <span className="rounded-full bg-harvest-100 px-2 py-1 text-xs font-black text-forest-950">Featured</span> : null}
+                        {product.archivedAt ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-700">Archived</span> : null}
                       </div>
                       <p className="mt-1 text-sm text-slate-600">
                         {product.sellerName} | {product.countryOfOrigin} | {product.category.replace("_", " ")}
@@ -240,8 +249,13 @@ export default function AdminPage() {
                       <button type="button" onClick={() => editProduct(product)} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold">
                         <Edit3 size={16} aria-hidden="true" /> Edit
                       </button>
-                      <button type="button" onClick={() => deleteProduct.mutate(product.id)} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-red-50 px-3 text-sm font-bold text-red-700">
-                        <Trash2 size={16} aria-hidden="true" /> Delete
+                      <button
+                        type="button"
+                        onClick={() => archiveProduct.mutate({ id: product.id, archived: Boolean(product.archivedAt) })}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-md bg-slate-50 px-3 text-sm font-bold text-slate-700"
+                      >
+                        {product.archivedAt ? <RotateCcw size={16} aria-hidden="true" /> : <Archive size={16} aria-hidden="true" />}
+                        {product.archivedAt ? "Unarchive" : "Archive"}
                       </button>
                     </div>
                   </article>
@@ -260,7 +274,7 @@ export default function AdminPage() {
             </div>
             <div className="divide-y divide-slate-100">
               {(orders.data ?? []).map((order) => (
-                <article key={order.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_220px]">
+                <article key={order.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_280px]">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <h3 className="text-lg font-black text-forest-950">{order.orderNumber}</h3>
@@ -280,17 +294,42 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <p className="mt-3 text-lg font-black text-forest-950">{formatNaira(order.subtotal)}</p>
+                    <div className="mt-4 rounded-md bg-slate-50 p-4">
+                      <p className="text-sm font-black text-forest-950">Payment readiness</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Provider: {order.paymentProvider ?? "Not initialized"} | Reference: {order.paymentReference ?? "None"}
+                      </p>
+                    </div>
                   </div>
-                  <label className="block text-sm font-bold text-forest-950">
-                    Status
-                    <select value={order.status} onChange={(event) => updateStatus.mutate({ id: order.id, status: event.target.value as OrderStatus })} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">
-                      {statuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status.replace("_", " ")}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="space-y-4">
+                    <label className="block text-sm font-bold text-forest-950">
+                      Status
+                      <select value={order.status} onChange={(event) => updateStatus.mutate({ id: order.id, status: event.target.value as OrderStatus })} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">
+                        {statuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status.replace("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block text-sm font-bold text-forest-950">
+                      Fulfillment notes
+                      <textarea
+                        value={orderNotes[order.id] ?? order.fulfillmentNotes ?? ""}
+                        onChange={(event) => setOrderNotes((current) => ({ ...current, [order.id]: event.target.value }))}
+                        className="mt-1 min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 font-normal"
+                        placeholder="Inspection, delivery, buyer follow-up..."
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => updateNotes.mutate({ id: order.id, notes: orderNotes[order.id] ?? order.fulfillmentNotes ?? "" })}
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-forest-600 px-4 text-sm font-black text-white disabled:opacity-50"
+                      disabled={updateNotes.isPending}
+                    >
+                      <Save size={16} aria-hidden="true" /> Save notes
+                    </button>
+                  </div>
                 </article>
               ))}
               {!orders.data?.length ? <p className="p-5 text-slate-600">No orders yet.</p> : null}
