@@ -27,6 +27,7 @@ export const api = {
     const query = params.toString();
     return request<Product[]>(`/products${query ? `?${query}` : ""}`);
   },
+  productBySlug: (slug: string) => request<Product>(`/products/${slug}`),
   createOrder: (payload: OrderPayload) =>
     request<{ id: string; orderNumber: string }>("/orders", {
       method: "POST",

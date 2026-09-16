@@ -2,6 +2,7 @@
 
 import { CheckCircle2, PackageCheck, ShoppingCart } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { formatNaira } from "@/lib/api";
 import { useCart } from "@/lib/cart-store";
@@ -35,7 +36,11 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="space-y-4 p-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-forest-600">{product.category}</p>
-          <h3 className="mt-1 text-lg font-extrabold text-forest-950">{product.name}</h3>
+          <h3 className="mt-1 text-lg font-extrabold text-forest-950">
+            <Link href={`/products/${product.slug}`} className="transition hover:text-forest-700">
+              {product.name}
+            </Link>
+          </h3>
           <p className="mt-1 min-h-10 text-sm leading-6 text-slate-600">{product.description}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -74,6 +79,12 @@ export function ProductCard({ product }: { product: Product }) {
             <ShoppingCart size={18} aria-hidden="true" /> Add
           </button>
         </div>
+        <Link
+          href={`/products/${product.slug}`}
+          className="inline-flex min-h-10 w-full items-center justify-center rounded-md border border-forest-100 text-sm font-bold text-forest-800 transition hover:bg-forest-50"
+        >
+          View product details
+        </Link>
       </div>
     </article>
   );

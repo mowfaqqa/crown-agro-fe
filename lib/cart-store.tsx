@@ -1,7 +1,7 @@
 "use client";
 
 import type { CartItem, Product } from "@/lib/types";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type CartContextValue = {
   items: CartItem[];
@@ -13,9 +13,27 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
+const CART_STORAGE_KEY = "zd-crown-cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) setItems(JSON.parse(stored) as CartItem[]);
+    } catch {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+    } finally {
+      setHasHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [hasHydrated, items]);
 
   const value = useMemo<CartContextValue>(() => {
     return {

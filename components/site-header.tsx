@@ -43,7 +43,7 @@ export function SiteHeader() {
             <Search size={17} aria-hidden="true" /> Search
           </a>
           <a
-            href="#cart"
+            href="/checkout"
             className="relative inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-950 px-3 text-sm font-bold text-white transition hover:bg-forest-800"
             aria-label={`Open cart with ${totalItems} item${totalItems === 1 ? "" : "s"}`}
           >
