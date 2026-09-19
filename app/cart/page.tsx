@@ -1,14 +1,26 @@
 "use client";
 
-import { ArrowLeft, PackageOpen, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowLeft, LockKeyhole, PackageOpen, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { formatNaira } from "@/lib/api";
-import { useCart } from "@/lib/cart-store";
+import { unitPriceFor, useCart } from "@/lib/cart-store";
+import { useAuth } from "@/lib/auth-store";
 
 export default function CartPage() {
   const { items, subtotal, updateQuantity, clear } = useCart();
+  const { customer, ready } = useAuth();
+
+  if (!ready) {
+    return <main><SiteHeader /><div className="mx-auto min-h-[60vh] max-w-7xl animate-pulse px-4 py-12"><div className="h-96 rounded-lg bg-forest-50" /></div></main>;
+  }
+
+  if (!customer) {
+    return (
+      <main><SiteHeader /><section className="mx-auto grid min-h-[65vh] max-w-3xl place-items-center px-4 py-16 text-center"><div><LockKeyhole className="mx-auto text-forest-600" size={44} aria-hidden="true" /><h1 className="mt-4 text-3xl font-black text-forest-950">Sign in to use your cart</h1><p className="mx-auto mt-3 max-w-xl text-lg leading-7 text-slate-600">Buyer carts are tied to an account so products and quantities stay private on shared devices.</p><div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/login?returnTo=%2Fcart" className="inline-flex min-h-12 items-center justify-center rounded-md bg-forest-600 px-6 font-black text-white">Sign in or register</Link><Link href="/marketplace" className="inline-flex min-h-12 items-center justify-center rounded-md border border-forest-100 bg-white px-6 font-black text-forest-800">Keep browsing</Link></div></div></section></main>
+    );
+  }
 
   return (
     <main>
@@ -48,7 +60,8 @@ export default function CartPage() {
                         {item.product.name}
                       </Link>
                       <p className="mt-1 text-sm text-slate-600">{item.product.sellerName} | {item.product.countryOfOrigin}</p>
-                      <p className="mt-2 font-black text-forest-950">{formatNaira(item.product.price)} / {item.product.unit}</p>
+                      <p className="mt-2 font-black text-forest-950">{formatNaira(unitPriceFor(item.product, item.quantity))} / {item.product.unit}</p>
+                      {unitPriceFor(item.product, item.quantity) < item.product.price ? <p className="mt-1 text-sm font-bold text-forest-700">Bulk price applied</p> : null}
                     </div>
                     <div className="flex items-center gap-3 md:justify-end">
                       <label className="block text-sm font-bold text-forest-950">
@@ -56,10 +69,12 @@ export default function CartPage() {
                         <input
                           type="number"
                           min={1}
+                          max={item.product.stockQuantity}
                           value={item.quantity}
                           onChange={(event) => updateQuantity(item.product.id, Number(event.target.value))}
                           className="mt-1 h-11 w-24 rounded-md border border-slate-200 px-3 font-normal"
                         />
+                        <span className="mt-1 block text-xs font-normal text-slate-500">Max {item.product.stockQuantity}</span>
                       </label>
                       <button type="button" onClick={() => updateQuantity(item.product.id, 0)} className="grid size-11 place-items-center rounded-md bg-red-50 text-red-700" aria-label={`Remove ${item.product.name}`}>
                         <Trash2 size={18} aria-hidden="true" />

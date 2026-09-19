@@ -19,7 +19,6 @@ import { useMemo, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { ProductCard } from "@/components/product-card";
 import { api } from "@/lib/api";
-import { fallbackProducts } from "@/lib/mock-data";
 
 const categories = ["All", "Fruits", "Grains", "Vegetables", "Livestock", "Poultry", "Fish", "Equipment", "Processed Foods"];
 
@@ -30,10 +29,12 @@ export default function HomePage() {
 
   const productsQuery = useQuery({
     queryKey: ["products", "", "All"],
-    queryFn: () => api.products()
+    queryFn: () => api.products({ limit: 12 })
   });
-  const products = productsQuery.data ?? fallbackProducts;
-  const featured = useMemo(() => products.filter((product) => product.featured).slice(0, 4), [products]);
+  const featured = useMemo(
+    () => (productsQuery.data?.items ?? []).filter((product) => product.featured).slice(0, 4),
+    [productsQuery.data?.items]
+  );
 
   const newsletter = useMutation({
     mutationFn: () => api.subscribe(email),
@@ -62,7 +63,7 @@ export default function HomePage() {
               Africa&apos;s trusted agro export marketplace.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-forest-50">
-              Buy verified agricultural produce from trusted farmers and suppliers. Search, build a cart, and request your order as a guest.
+              Buy verified agricultural produce from trusted farmers and suppliers. Browse freely, then sign in to keep your cart private and place an order.
             </p>
             <form
               className="mt-8 grid gap-3 rounded-lg bg-white p-3 shadow-soft sm:grid-cols-[1fr_auto_auto]"
@@ -133,6 +134,7 @@ export default function HomePage() {
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+        {productsQuery.isError ? <div className="mt-8 rounded-lg border border-red-100 bg-red-50 p-5 text-center"><p className="font-black text-red-900">Featured products could not be loaded.</p><button type="button" onClick={() => productsQuery.refetch()} className="mt-3 min-h-11 rounded-md bg-forest-600 px-5 font-black text-white">Try again</button></div> : null}
       </section>
 
       <section className="bg-white py-20" id="trust">
@@ -150,7 +152,7 @@ export default function HomePage() {
                 [ShieldCheck, "Verified sellers", "Admin-approved supplier profiles and farmer clusters."],
                 [Truck, "Delivery clarity", "Collect delivery country, address, notes, and order line items."],
                 [PackageCheck, "Export readiness", "Surface export and halal certification at product level."],
-                [Globe2, "Global buyer flow", "Guest checkout reduces friction for international buyers."]
+                [Globe2, "Protected buyer flow", "Account-based carts keep orders private and easier to track."]
               ].map(([Icon, title, copy]) => (
                 <div key={title as string} className="rounded-lg border border-forest-100 bg-forest-50 p-6">
                   <Icon className="text-forest-600" size={28} aria-hidden="true" />
@@ -192,7 +194,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="rounded-lg bg-forest-950 px-6 py-14 text-center text-white sm:px-10">
           <h2 className="text-4xl font-black">Ready to build an order?</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-forest-100">Use the dedicated cart page to review quantities before submitting a guest checkout request.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-forest-100">Sign in, build your cart, and review bulk pricing before submitting an order request.</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/marketplace" className="inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 text-sm font-black text-forest-950">
               Browse marketplace

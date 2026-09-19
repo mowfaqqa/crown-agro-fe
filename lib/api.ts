@@ -1,6 +1,12 @@
-import type { AdminOrder, AdminProduct, DashboardStats, GuestOrder, OrderConfirmation, OrderPayload, OrderStatus, Product } from "@/lib/types";
+import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
@@ -12,30 +18,53 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Request failed with ${response.status}`);
+    const body = await response.json().catch(() => null) as { message?: string | string[] } | null;
+    const message = Array.isArray(body?.message) ? body.message.join(". ") : body?.message;
+    throw new ApiError(message || `Request failed with ${response.status}`, response.status);
   }
 
   return response.json() as Promise<T>;
 }
 
 export const api = {
-  products: (search?: string, category?: string) => {
+  products: (filters: ProductFilters = {}) => {
     const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (category && category !== "All") params.set("category", category);
+    if (filters.search) params.set("search", filters.search);
+    if (filters.category && filters.category !== "All") params.set("category", filters.category);
+    if (filters.country) params.set("country", filters.country);
+    if (filters.halal) params.set("halal", "true");
+    if (filters.exportCertified) params.set("exportCertified", "true");
+    if (filters.availability && filters.availability !== "all") params.set("availability", filters.availability);
+    if (filters.sort) params.set("sort", filters.sort);
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.limit) params.set("limit", String(filters.limit));
     const query = params.toString();
-    return request<Product[]>(`/products${query ? `?${query}` : ""}`);
+    return request<ProductResponse>(`/products${query ? `?${query}` : ""}`);
   },
   productBySlug: (slug: string) => request<Product>(`/products/${slug}`),
-  createOrder: (payload: OrderPayload) =>
+  createOrder: (token: string, payload: OrderPayload) =>
     request<OrderConfirmation>("/orders", {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload)
+    }),
+  registerCustomer: (name: string, email: string, password: string) =>
+    request<CustomerSession>("/auth/customer/register", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password })
+    }),
+  loginCustomer: (email: string, password: string) =>
+    request<CustomerSession>("/auth/customer/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    }),
+  customerProfile: (token: string) =>
+    request<Customer>("/auth/customer/me", {
+      headers: { Authorization: `Bearer ${token}` }
     }),
   lookupOrder: (orderNumber: string, email: string) => {
     const params = new URLSearchParams({ orderNumber, email });
-    return request<GuestOrder>(`/orders/lookup?${params.toString()}`);
+    return request<OrderDetails>(`/orders/lookup?${params.toString()}`);
   },
   subscribe: (email: string) =>
     request<{ ok: boolean }>("/newsletter", {

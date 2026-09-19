@@ -32,6 +32,34 @@ export type Product = {
   archivedAt?: string | null;
 };
 
+export type ProductSort = "featured" | "newest" | "price_asc" | "price_desc" | "name_asc";
+export type AvailabilityFilter = "all" | "in_stock" | "out_of_stock";
+
+export type ProductFilters = {
+  search?: string;
+  category?: string;
+  country?: string;
+  halal?: boolean;
+  exportCertified?: boolean;
+  availability?: AvailabilityFilter;
+  sort?: ProductSort;
+  page?: number;
+  limit?: number;
+};
+
+export type ProductResponse = {
+  items: Product[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  filters: { countries: string[] };
+};
+
+export type Customer = { id: string; name: string; email: string };
+
+export type CustomerSession = {
+  accessToken: string;
+  customer: Customer;
+};
+
 export type AdminProduct = Omit<Product, "category" | "sellerName" | "bulkPricing"> & {
   category:
     | "FRUITS"
@@ -95,8 +123,7 @@ export type DashboardStats = {
 };
 
 export type OrderPayload = {
-  customerName: string;
-  email: string;
+  idempotencyKey: string;
   phone: string;
   deliveryCountry: string;
   deliveryAddress: string;
@@ -114,4 +141,4 @@ export type OrderConfirmation = {
   subtotal: number;
 };
 
-export type GuestOrder = AdminOrder;
+export type OrderDetails = AdminOrder;

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, BarChart3, Edit3, LockKeyhole, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
-import { api, formatNaira, type AdminProductFormPayload } from "@/lib/api";
+import { ApiError, api, formatNaira, type AdminProductFormPayload } from "@/lib/api";
 import type { AdminProduct, OrderStatus } from "@/lib/types";
 
 type StatCard = [LucideIcon, string, string | number];
@@ -29,7 +29,14 @@ const emptyProduct: AdminProductFormPayload = {
   bulkPricing: [{ minQuantity: 10, unitPrice: 0 }]
 };
 
-const statuses: OrderStatus[] = ["PENDING", "CONFIRMED", "AWAITING_PAYMENT", "PAID", "FULFILLED", "CANCELLED"];
+const allowedNextStatuses: Record<OrderStatus, OrderStatus[]> = {
+  PENDING: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["AWAITING_PAYMENT", "CANCELLED"],
+  AWAITING_PAYMENT: ["PAID", "CANCELLED"],
+  PAID: ["FULFILLED"],
+  FULFILLED: [],
+  CANCELLED: []
+};
 const categories: AdminProduct["category"][] = ["FRUITS", "GRAINS", "VEGETABLES", "LIVESTOCK", "POULTRY", "FISH", "EQUIPMENT", "PROCESSED_FOODS"];
 
 export default function AdminPage() {
@@ -270,7 +277,8 @@ export default function AdminPage() {
           <section className="mt-6 rounded-lg border border-slate-200 bg-white">
             <div className="border-b border-slate-200 p-5">
               <h2 className="text-xl font-black text-forest-950">Order requests</h2>
-              <p className="mt-1 text-sm text-slate-600">Track guest orders before Paystack is added.</p>
+              <p className="mt-1 text-sm text-slate-600">Process registered buyer orders through controlled fulfillment stages.</p>
+              {updateStatus.isError ? <p role="alert" className="mt-3 rounded-md bg-red-50 p-3 text-sm font-bold text-red-800">{updateStatus.error instanceof ApiError ? updateStatus.error.message : "Could not update the order status."}</p> : null}
             </div>
             <div className="divide-y divide-slate-100">
               {(orders.data ?? []).map((order) => (
@@ -304,8 +312,8 @@ export default function AdminPage() {
                   <div className="space-y-4">
                     <label className="block text-sm font-bold text-forest-950">
                       Status
-                      <select value={order.status} onChange={(event) => updateStatus.mutate({ id: order.id, status: event.target.value as OrderStatus })} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">
-                        {statuses.map((status) => (
+                      <select disabled={!allowedNextStatuses[order.status].length || updateStatus.isPending} value={order.status} onChange={(event) => updateStatus.mutate({ id: order.id, status: event.target.value as OrderStatus })} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3 disabled:bg-slate-100">
+                        {[order.status, ...allowedNextStatuses[order.status]].map((status) => (
                           <option key={status} value={status}>
                             {status.replace("_", " ")}
                           </option>

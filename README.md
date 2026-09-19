@@ -23,9 +23,12 @@ The app runs on `http://localhost:3000` by default and expects the backend at `N
 ## Current Milestone
 
 - Search-first homepage
-- Marketplace product grid
-- Guest cart and order request flow
+- Marketplace sorting, pagination, origin, certification, and stock filters
+- Customer registration and JWT login
+- Account-scoped cart and authenticated checkout flow
+- Dedicated product, cart, checkout, and order lookup pages
 - Newsletter capture
-- Admin JWT login and protected stats foundation
+- Admin JWT login, product management, and controlled order fulfillment
+- Loading, empty, and backend-offline recovery states
 
-Next milestones should add admin product CRUD, order management, image uploads, and Paystack checkout.
+Next milestones should add automated tests, production notifications, managed image uploads, and Paystack checkout.

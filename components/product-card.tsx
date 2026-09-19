@@ -3,12 +3,25 @@
 import { CheckCircle2, PackageCheck, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { formatNaira } from "@/lib/api";
 import { useCart } from "@/lib/cart-store";
+import { useAuth } from "@/lib/auth-store";
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { customer } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  function addToCart() {
+    if (!customer) {
+      router.push(`/login?returnTo=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    addItem(product);
+  }
 
   return (
     <article className="group overflow-hidden rounded-lg border border-forest-100 bg-white shadow-line transition duration-200 hover:-translate-y-1 hover:shadow-soft">
@@ -72,11 +85,12 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           <button
             type="button"
-            onClick={() => addItem(product)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-600 px-4 text-sm font-bold text-white transition hover:bg-forest-700"
+            onClick={addToCart}
+            disabled={product.stockQuantity < 1}
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-600 px-4 text-sm font-bold text-white transition hover:bg-forest-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             aria-label={`Add ${product.name} to cart`}
           >
-            <ShoppingCart size={18} aria-hidden="true" /> Add
+            <ShoppingCart size={18} aria-hidden="true" /> {product.stockQuantity < 1 ? "Sold out" : customer ? "Add" : "Sign in"}
           </button>
         </div>
         <Link

@@ -4,25 +4,44 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, CheckCircle2, PackageCheck, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { SiteHeader } from "@/components/site-header";
 import { api, formatNaira } from "@/lib/api";
 import { useCart } from "@/lib/cart-store";
-import { fallbackProducts } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-store";
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const { addItem } = useCart();
-  const fallbackProduct = fallbackProducts.find((product) => product.slug === params.slug);
+  const { customer } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const productQuery = useQuery({
     queryKey: ["product", params.slug],
     queryFn: () => api.productBySlug(params.slug),
     retry: 1
   });
-  const product = productQuery.data ?? fallbackProduct;
-  const related = fallbackProducts.filter((item) => item.slug !== params.slug && item.category === product?.category).slice(0, 3);
+  const product = productQuery.data;
+  const relatedQuery = useQuery({
+    queryKey: ["related-products", product?.category],
+    queryFn: () => api.products({ category: product?.category, limit: 4 }),
+    enabled: Boolean(product)
+  });
+  const related = (relatedQuery.data?.items ?? []).filter((item) => item.slug !== params.slug).slice(0, 3);
+
+  function addToCart() {
+    if (!customer) {
+      router.push(`/login?returnTo=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (product) addItem(product);
+  }
+
+  if (productQuery.isLoading) return <main><SiteHeader /><div className="mx-auto min-h-[65vh] max-w-7xl animate-pulse px-4 py-12"><div className="h-[560px] rounded-lg bg-forest-50" /></div></main>;
+
+  if (productQuery.isError) return <main><SiteHeader /><section className="mx-auto grid min-h-[65vh] max-w-3xl place-items-center px-4 py-16 text-center"><div><h1 className="text-3xl font-black text-forest-950">Product service unavailable</h1><p className="mt-3 text-slate-600">We could not load this product. Check your connection and try again.</p><button type="button" onClick={() => productQuery.refetch()} className="mt-6 min-h-11 rounded-md bg-forest-600 px-5 font-black text-white">Try again</button></div></section></main>;
 
   if (!product) {
     return (
@@ -31,7 +50,7 @@ export default function ProductDetailPage() {
         <section className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 lg:px-8">
           <h1 className="text-3xl font-black text-forest-950">Product not found</h1>
           <p className="mt-3 text-slate-600">This product may be unavailable or unpublished.</p>
-          <Link href="/#marketplace" className="mt-6 inline-flex min-h-11 items-center rounded-md bg-forest-600 px-5 font-black text-white">
+          <Link href="/marketplace" className="mt-6 inline-flex min-h-11 items-center rounded-md bg-forest-600 px-5 font-black text-white">
             Back to marketplace
           </Link>
         </section>
@@ -43,7 +62,7 @@ export default function ProductDetailPage() {
     <main>
       <SiteHeader />
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Link href="/#marketplace" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-bold text-forest-800">
+        <Link href="/marketplace" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-bold text-forest-800">
           <ArrowLeft size={17} aria-hidden="true" /> Back to marketplace
         </Link>
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-start">
@@ -106,13 +125,14 @@ export default function ProductDetailPage() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() => addItem(product)}
-                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-forest-600 px-5 font-black text-white transition hover:bg-forest-700"
+                onClick={addToCart}
+                disabled={product.stockQuantity < 1}
+                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-forest-600 px-5 font-black text-white transition hover:bg-forest-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                <ShoppingCart size={19} aria-hidden="true" /> Add to cart
+                <ShoppingCart size={19} aria-hidden="true" /> {product.stockQuantity < 1 ? "Out of stock" : customer ? "Add to cart" : "Sign in to add"}
               </button>
-              <Link href="/checkout" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-md border border-forest-200 px-5 font-black text-forest-800 transition hover:bg-forest-50">
-                Go to checkout
+              <Link href={customer ? "/cart" : `/login?returnTo=${encodeURIComponent(pathname)}`} className="inline-flex min-h-12 flex-1 items-center justify-center rounded-md border border-forest-200 px-5 font-black text-forest-800 transition hover:bg-forest-50">
+                Review cart
               </Link>
             </div>
           </aside>

@@ -1,80 +1,64 @@
 "use client";
 
-import { LayoutDashboard, Menu, Search, ShoppingCart, Sprout } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, Search, ShoppingCart, Sprout, UserRound, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth-store";
 import { useCart } from "@/lib/cart-store";
+
+const navigation = [
+  ["Marketplace", "/marketplace"],
+  ["How it works", "/#how-it-works"],
+  ["Trust", "/#trust"],
+  ["Live hub", "/#live-hub"],
+  ["Track order", "/orders/lookup"]
+];
 
 export function SiteHeader() {
   const { totalItems } = useCart();
+  const { customer, ready, signOut } = useAuth();
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const cartHref = customer ? "/cart" : "/login?returnTo=%2Fcart";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-forest-100 bg-white/94 shadow-line backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-forest-100 bg-white/95 shadow-line backdrop-blur">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3" aria-label="ZD Crown home">
           <span className="grid size-10 place-items-center rounded-md bg-forest-600 text-sm font-black text-white">ZD</span>
-          <span className="leading-tight">
-            <span className="block text-base font-black text-forest-950">ZD Crown</span>
-            <span className="block text-xs font-semibold text-forest-600">Agro Marketplace</span>
-          </span>
+          <span className="leading-tight"><span className="block text-base font-black text-forest-950">ZD Crown</span><span className="block text-xs font-semibold text-forest-600">Agro Marketplace</span></span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-          {[
-            ["Marketplace", "/marketplace"],
-            ["How it works", "/#how-it-works"],
-            ["Trust", "/#trust"],
-            ["Live hub", "/#live-hub"],
-            ["Track order", "/orders/lookup"]
-          ].map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className="rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-forest-50 hover:text-forest-800"
-            >
-              {label}
-            </Link>
+          {navigation.map(([label, href]) => (
+            <Link key={href} href={href} className={`rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname === href ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}>{label}</Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/marketplace"
-            className="hidden min-h-11 items-center gap-2 rounded-md border border-forest-100 px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 sm:inline-flex"
-          >
-            <Search size={17} aria-hidden="true" /> Search
+          <Link href="/marketplace" className="hidden min-h-11 items-center gap-2 rounded-md border border-forest-100 px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 sm:inline-flex"><Search size={17} aria-hidden="true" /> Search</Link>
+          <Link href={cartHref} className="relative inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-950 px-3 text-sm font-bold text-white transition hover:bg-forest-800" aria-label={customer ? `Open cart with ${totalItems} items` : "Sign in to view cart"}>
+            <ShoppingCart size={18} aria-hidden="true" /><span className="hidden sm:inline">Cart</span>
+            {customer && totalItems > 0 ? <span className="grid min-w-5 place-items-center rounded-full bg-harvest-300 px-1.5 text-xs text-forest-950">{totalItems}</span> : null}
           </Link>
-          <Link
-            href="/cart"
-            className="relative inline-flex min-h-11 items-center gap-2 rounded-md bg-forest-950 px-3 text-sm font-bold text-white transition hover:bg-forest-800"
-            aria-label={`Open cart with ${totalItems} item${totalItems === 1 ? "" : "s"}`}
-          >
-            <ShoppingCart size={18} aria-hidden="true" />
-            <span className="hidden sm:inline">Cart</span>
-            {totalItems > 0 ? (
-              <span className="grid min-w-5 place-items-center rounded-full bg-harvest-300 px-1.5 text-xs text-forest-950">
-                {totalItems}
-              </span>
-            ) : null}
-          </Link>
-          <Link
-            href="/admin"
-            className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex"
-          >
-            <LayoutDashboard size={18} aria-hidden="true" /> Admin
-          </Link>
-          <button
-            type="button"
-            className="inline-grid size-11 place-items-center rounded-md border border-forest-100 text-forest-900 lg:hidden"
-            aria-label="Open menu"
-          >
-            <Menu size={20} aria-hidden="true" />
-          </button>
+          {ready && !customer ? <Link href={`/login?returnTo=${encodeURIComponent(pathname)}`} className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex"><LogIn size={18} aria-hidden="true" /> Sign in</Link> : null}
+          {customer ? <button type="button" onClick={signOut} className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex" title={`Signed in as ${customer.email}`}><UserRound size={18} aria-hidden="true" /> {customer.name.split(" ")[0]} <LogOut size={16} aria-hidden="true" /></button> : null}
+          <button type="button" onClick={() => setMenuOpen((current) => !current)} className="inline-grid size-11 place-items-center rounded-md border border-forest-100 text-forest-900 lg:hidden" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="mobile-navigation">{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}</button>
         </div>
       </div>
-      <div className="border-t border-forest-100 bg-forest-50/80 px-4 py-2 text-center text-xs font-semibold text-forest-800">
-        <Sprout className="mr-1 inline" size={14} aria-hidden="true" />
-        Verified sellers, export-ready produce, and guest ordering for faster buying.
-      </div>
+
+      {menuOpen ? (
+        <nav id="mobile-navigation" className="border-t border-forest-100 bg-white px-4 py-3 lg:hidden" aria-label="Mobile navigation">
+          <div className="mx-auto grid max-w-7xl gap-1">
+            {navigation.map(([label, href]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50">{label}</Link>)}
+            <Link href="/admin" onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50"><LayoutDashboard size={18} aria-hidden="true" /> Admin</Link>
+            {customer ? <button type="button" onClick={() => { signOut(); setMenuOpen(false); }} className="flex min-h-12 items-center gap-2 rounded-md px-3 text-left font-bold text-red-700 hover:bg-red-50"><LogOut size={18} aria-hidden="true" /> Sign out {customer.name.split(" ")[0]}</button> : <Link href={`/login?returnTo=${encodeURIComponent(pathname)}`} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md bg-forest-600 px-3 font-bold text-white"><LogIn size={18} aria-hidden="true" /> Sign in or register</Link>}
+          </div>
+        </nav>
+      ) : null}
+
+      <div className="border-t border-forest-100 bg-forest-50/80 px-4 py-2 text-center text-xs font-semibold text-forest-800"><Sprout className="mr-1 inline" size={14} aria-hidden="true" /> Verified sellers, export-ready produce, and protected buyer carts.</div>
     </header>
   );
 }
