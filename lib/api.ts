@@ -11,6 +11,7 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers ?? {})
@@ -60,6 +61,42 @@ export const api = {
     }),
   customerProfile: (token: string) =>
     request<Customer>("/auth/customer/me", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  refreshCustomer: () =>
+    request<CustomerSession>("/auth/customer/refresh", { method: "POST" }),
+  logoutCustomer: () =>
+    request<{ ok: boolean }>("/auth/customer/logout", { method: "POST" }),
+  verifyEmail: (token: string) =>
+    request<{ ok: boolean }>("/auth/customer/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token })
+    }),
+  resendVerification: (token: string) =>
+    request<{ ok: boolean }>("/auth/customer/resend-verification", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  forgotPassword: (email: string) =>
+    request<{ ok: boolean }>("/auth/customer/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email })
+    }),
+  resetPassword: (token: string, password: string) =>
+    request<{ ok: boolean }>("/auth/customer/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password })
+    }),
+  authProviders: () => request<{ google: boolean }>("/auth/customer/providers"),
+  googleLoginUrl: () => `${API_URL}/auth/google`,
+  updateCustomerProfile: (token: string, name: string) =>
+    request<Customer>("/customers/me", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name })
+    }),
+  customerOrders: (token: string) =>
+    request<OrderDetails[]>("/customers/me/orders", {
       headers: { Authorization: `Bearer ${token}` }
     }),
   lookupOrder: (orderNumber: string, email: string) => {

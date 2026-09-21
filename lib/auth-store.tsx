@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { Customer, CustomerSession } from "@/lib/types";
 
@@ -9,47 +9,54 @@ type AuthContextValue = {
   token: string | null;
   ready: boolean;
   setSession: (session: CustomerSession) => void;
+  refreshSession: () => Promise<CustomerSession | null>;
   signOut: () => void;
 };
 
-const SESSION_KEY = "zd-crown-customer-session";
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setStoredSession] = useState<CustomerSession | null>(null);
+  const [session, setSessionState] = useState<CustomerSession | null>(null);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (!raw) {
-      setReady(true);
-      return;
-    }
+  const refreshSession = useCallback(async () => {
     try {
-      const stored = JSON.parse(raw) as CustomerSession;
-      api.customerProfile(stored.accessToken)
-        .then((customer) => setStoredSession({ ...stored, customer }))
-        .catch(() => window.sessionStorage.removeItem(SESSION_KEY))
-        .finally(() => setReady(true));
+      const nextSession = await api.refreshCustomer();
+      setSessionState(nextSession);
+      return nextSession;
     } catch {
-      window.sessionStorage.removeItem(SESSION_KEY);
-      setReady(true);
+      setSessionState(null);
+      return null;
     }
   }, []);
+
+  useEffect(() => {
+    window.sessionStorage.removeItem("zd-crown-customer-session");
+    refreshSession().finally(() => setReady(true));
+  }, [refreshSession]);
+
+  useEffect(() => {
+    if (!session) return;
+    const interval = window.setInterval(() => void refreshSession(), 12 * 60 * 1000);
+    const onFocus = () => void refreshSession();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refreshSession, session]);
 
   const value = useMemo<AuthContextValue>(() => ({
     customer: session?.customer ?? null,
     token: session?.accessToken ?? null,
     ready,
-    setSession(nextSession) {
-      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
-      setStoredSession(nextSession);
-    },
+    setSession: setSessionState,
+    refreshSession,
     signOut() {
-      window.sessionStorage.removeItem(SESSION_KEY);
-      setStoredSession(null);
+      setSessionState(null);
+      void api.logoutCustomer().catch(() => undefined);
     }
-  }), [ready, session]);
+  }), [ready, refreshSession, session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, LockKeyhole, PackageOpen, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, LockKeyhole, MailWarning, PackageOpen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
@@ -50,6 +50,7 @@ export default function CheckoutPage() {
       if (error instanceof ApiError && error.status === 401) signOut();
     }
   });
+  const resendVerification = useMutation({ mutationFn: () => api.resendVerification(token ?? "") });
 
   function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,6 +59,7 @@ export default function CheckoutPage() {
 
   if (!ready) return <main><SiteHeader /><div className="mx-auto min-h-[60vh] max-w-7xl animate-pulse px-4 py-12"><div className="h-96 rounded-lg bg-forest-50" /></div></main>;
   if (!customer || !token) return <main><SiteHeader /><section className="mx-auto grid min-h-[65vh] max-w-3xl place-items-center px-4 py-16 text-center"><div><LockKeyhole className="mx-auto text-forest-600" size={44} aria-hidden="true" /><h1 className="mt-4 text-3xl font-black text-forest-950">Sign in before checkout</h1><p className="mt-3 text-lg text-slate-600">Checkout is available to registered buyers only.</p><Link href="/login?returnTo=%2Fcheckout" className="mt-6 inline-flex min-h-12 items-center rounded-md bg-forest-600 px-6 font-black text-white">Sign in or register</Link></div></section></main>;
+  if (!customer.emailVerified) return <main><SiteHeader /><section className="mx-auto grid min-h-[65vh] max-w-3xl place-items-center px-4 py-16 text-center"><div><MailWarning className="mx-auto text-amber-700" size={44} aria-hidden="true" /><h1 className="mt-4 text-3xl font-black text-forest-950">Verify your email before checkout</h1><p className="mx-auto mt-3 max-w-xl text-lg leading-7 text-slate-600">Use the verification link sent to {customer.email}. This protects orders from being placed with an address you do not control.</p><button type="button" onClick={() => resendVerification.mutate()} disabled={resendVerification.isPending || resendVerification.isSuccess} className="mt-6 min-h-12 rounded-md bg-forest-600 px-6 font-black text-white disabled:opacity-50">{resendVerification.isSuccess ? "Verification email sent" : resendVerification.isPending ? "Sending..." : "Resend verification email"}</button><div><Link href="/account" className="mt-4 inline-flex min-h-11 items-center font-black text-forest-700 underline">Go to my account</Link></div></div></section></main>;
 
   return (
     <main>

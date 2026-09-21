@@ -53,7 +53,7 @@ export type ProductResponse = {
   filters: { countries: string[] };
 };
 
-export type Customer = { id: string; name: string; email: string };
+export type Customer = { id: string; name: string; email: string; emailVerified: boolean };
 
 export type CustomerSession = {
   accessToken: string;
