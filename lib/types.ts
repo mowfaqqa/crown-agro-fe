@@ -118,6 +118,8 @@ export type DashboardStats = {
   products: number;
   orders: number;
   pendingOrders: number;
+  newServiceEnquiries: number;
+  newInvestmentInterests: number;
   lowStock: number;
   revenue: number;
 };
@@ -218,6 +220,10 @@ export type ServiceEnquiry = {
   customer: Pick<Customer, "id" | "name" | "email">;
 };
 
+export type CustomerServiceEnquiry = Omit<ServiceEnquiry, "adminNotes" | "customer" | "service"> & {
+  service: Pick<ServiceListing, "id" | "title" | "slug" | "providerName" | "location">;
+};
+
 export type InvestmentCategory =
   | "FARMING_SEASON"
   | "FRESH_PRODUCE"
@@ -271,4 +277,8 @@ export type InvestmentInterest = {
   updatedAt: string;
   opportunity: Pick<InvestmentOpportunity, "id" | "title" | "slug" | "category">;
   customer: Pick<Customer, "id" | "name" | "email">;
+};
+
+export type CustomerInvestmentInterest = Omit<InvestmentInterest, "adminNotes" | "customer" | "opportunity"> & {
+  opportunity: Pick<InvestmentOpportunity, "id" | "title" | "slug" | "location">;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Mail, MapPin, Send, WifiOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,13 +12,17 @@ import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-store";
 
 export default function ServiceDetailPage() {
+  const queryClient = useQueryClient();
   const params = useParams<{ slug: string }>();
   const pathname = usePathname();
   const { customer, token, ready } = useAuth();
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const serviceQuery = useQuery({ queryKey: ["service", params.slug], queryFn: () => api.serviceBySlug(params.slug), retry: 1 });
-  const enquiry = useMutation({ mutationFn: () => api.createServiceEnquiry(token ?? "", serviceQuery.data?.id ?? "", { phone, message }) });
+  const enquiry = useMutation({
+    mutationFn: () => api.createServiceEnquiry(token ?? "", serviceQuery.data?.id ?? "", { phone, message }),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["customer-service-enquiries", customer?.id] })
+  });
   const service = serviceQuery.data;
 
   if (serviceQuery.isLoading) return <main><SiteHeader /><div className="mx-auto min-h-[70vh] max-w-6xl animate-pulse px-4 py-12"><div className="h-[560px] rounded-lg bg-forest-50" /></div></main>;

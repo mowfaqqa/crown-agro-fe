@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CalendarDays, CheckCircle2, Landmark, MapPin, Send, ShieldAlert, WalletCards, WifiOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +21,7 @@ const investorTypes: { value: InvestorType; label: string }[] = [
 ];
 
 export default function InvestmentDetailPage() {
+  const queryClient = useQueryClient();
   const params = useParams<{ slug: string }>();
   const pathname = usePathname();
   const { customer, token, ready } = useAuth();
@@ -38,7 +39,8 @@ export default function InvestmentDetailPage() {
       phone,
       indicativeAmount: indicativeAmount ? Number(indicativeAmount) : undefined,
       message
-    })
+    }),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["customer-investment-interests", customer?.id] })
   });
 
   if (opportunityQuery.isLoading) return <main><SiteHeader /><div className="mx-auto min-h-[70vh] max-w-6xl animate-pulse px-4 py-12"><div className="h-[600px] rounded-lg bg-forest-50" /></div></main>;

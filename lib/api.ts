@@ -1,4 +1,4 @@
-import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, InvestmentCategory, InvestmentInterest, InvestmentInterestStatus, InvestmentOpportunity, InvestmentsResponse, InvestorType, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse, ServiceCategory, ServiceEnquiry, ServiceEnquiryStatus, ServiceListing, ServicesResponse } from "@/lib/types";
+import type { AdminOrder, AdminProduct, Customer, CustomerInvestmentInterest, CustomerServiceEnquiry, CustomerSession, DashboardStats, InvestmentCategory, InvestmentInterest, InvestmentInterestStatus, InvestmentOpportunity, InvestmentsResponse, InvestorType, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse, ServiceCategory, ServiceEnquiry, ServiceEnquiryStatus, ServiceListing, ServicesResponse } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -135,6 +135,14 @@ export const api = {
     }),
   customerOrders: (token: string) =>
     request<OrderDetails[]>("/customers/me/orders", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  customerServiceEnquiries: (token: string) =>
+    request<CustomerServiceEnquiry[]>("/customers/me/service-enquiries", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  customerInvestmentInterests: (token: string) =>
+    request<CustomerInvestmentInterest[]>("/customers/me/investment-interests", {
       headers: { Authorization: `Bearer ${token}` }
     }),
   lookupOrder: (orderNumber: string, email: string) => {

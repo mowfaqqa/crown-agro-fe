@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, BarChart3, Edit3, LockKeyhole, Newspaper, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
+import { Archive, BarChart3, Edit3, Inbox, Landmark, LockKeyhole, Newspaper, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { ApiError, api, formatNaira, type AdminMarketInsightFormPayload, type AdminProductFormPayload } from "@/lib/api";
@@ -235,11 +235,13 @@ export default function AdminPage() {
 
         {tab === "overview" ? (
           <div className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {([
                 [Package, "Products", stats.data?.products ?? 0],
                 [ShoppingBag, "Orders", stats.data?.orders ?? 0],
-                [ShieldCheck, "Pending", stats.data?.pendingOrders ?? 0],
+                [ShieldCheck, "Pending orders", stats.data?.pendingOrders ?? 0],
+                [Inbox, "New enquiries", stats.data?.newServiceEnquiries ?? 0],
+                [Landmark, "New investment interest", stats.data?.newInvestmentInterests ?? 0],
                 [TriangleAlert, "Low stock", stats.data?.lowStock ?? 0],
                 [BarChart3, "Revenue", formatNaira(stats.data?.revenue ?? 0)]
               ] satisfies StatCard[]).map(([Icon, label, value]) => (

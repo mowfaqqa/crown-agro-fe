@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Edit3, Inbox, Plus, RotateCcw, Save, Wrench } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Archive, Edit3, Inbox, Plus, RotateCcw, Save, Search, Wrench } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
 import { ApiError, api, type AdminServiceFormPayload } from "@/lib/api";
 import type { ServiceCategory, ServiceEnquiryStatus, ServiceListing } from "@/lib/types";
 import { serviceCategoryDetails } from "@/components/service-card";
@@ -27,6 +27,8 @@ export function AdminServicesPanel({ token }: { token: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AdminServiceFormPayload>(emptyService);
   const [enquiryNotes, setEnquiryNotes] = useState<Record<string, string>>({});
+  const [enquirySearch, setEnquirySearch] = useState("");
+  const [enquiryStatus, setEnquiryStatus] = useState<ServiceEnquiryStatus | "ALL">("ALL");
   const services = useQuery({ queryKey: ["admin-services", token], queryFn: () => api.adminServices(token) });
   const enquiries = useQuery({ queryKey: ["admin-service-enquiries", token], queryFn: () => api.adminServiceEnquiries(token) });
   const saveService = useMutation({
@@ -43,8 +45,20 @@ export function AdminServicesPanel({ token }: { token: string }) {
   });
   const updateEnquiry = useMutation({
     mutationFn: ({ id, status, notes }: { id: string; status: ServiceEnquiryStatus; notes: string }) => api.updateAdminServiceEnquiry(token, id, status, notes),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["admin-service-enquiries", token] })
+    onSuccess: async () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["admin-service-enquiries", token] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-stats", token] })
+    ])
   });
+  const filteredEnquiries = useMemo(() => {
+    const search = enquirySearch.trim().toLowerCase();
+    return (enquiries.data ?? []).filter((enquiry) => {
+      const matchesStatus = enquiryStatus === "ALL" || enquiry.status === enquiryStatus;
+      const matchesSearch = !search || [enquiry.service.title, enquiry.customer.name, enquiry.customer.email, enquiry.phone]
+        .some((value) => value.toLowerCase().includes(search));
+      return matchesStatus && matchesSearch;
+    });
+  }, [enquiries.data, enquirySearch, enquiryStatus]);
 
   function editService(service: ServiceListing) {
     setEditingId(service.id);
@@ -78,12 +92,13 @@ export function AdminServicesPanel({ token }: { token: string }) {
     </div>
 
     <section className="rounded-lg border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 p-5"><div className="flex items-center gap-3"><Inbox className="text-forest-600" size={24} aria-hidden="true" /><div><h2 className="text-xl font-black text-forest-950">Customer enquiries</h2><p className="mt-1 text-sm text-slate-600">Review requests, record follow-up notes, and keep their status current.</p></div></div>{updateEnquiry.isError ? <p role="alert" className="mt-3 rounded-md bg-red-50 p-3 text-sm font-bold text-red-800">{updateEnquiry.error instanceof ApiError ? updateEnquiry.error.message : "Could not update this enquiry."}</p> : null}</div>
+      <div className="border-b border-slate-200 p-5"><div className="flex items-center gap-3"><Inbox className="text-forest-600" size={24} aria-hidden="true" /><div><h2 className="text-xl font-black text-forest-950">Customer enquiries</h2><p className="mt-1 text-sm text-slate-600">Review requests, record follow-up notes, and keep their status current.</p></div></div><div className="mt-5 grid gap-3 md:grid-cols-[1fr_220px_auto] md:items-end"><label className="block text-sm font-bold text-forest-950">Search enquiries<div className="relative mt-1"><Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} aria-hidden="true" /><input type="search" value={enquirySearch} onChange={(event) => setEnquirySearch(event.target.value)} placeholder="Name, email, phone, or service" className="min-h-11 w-full rounded-md border border-slate-200 pl-10 pr-3 font-normal" /></div></label><label className="block text-sm font-bold text-forest-950">Status<select value={enquiryStatus} onChange={(event) => setEnquiryStatus(event.target.value as ServiceEnquiryStatus | "ALL")} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3 font-normal"><option value="ALL">All statuses</option>{statuses.map((status) => <option key={status} value={status}>{status.replace("_", " ")}</option>)}</select></label><p className="pb-3 text-sm font-bold text-slate-500" aria-live="polite">{filteredEnquiries.length} shown</p></div>{updateEnquiry.isError ? <p role="alert" className="mt-3 rounded-md bg-red-50 p-3 text-sm font-bold text-red-800">{updateEnquiry.error instanceof ApiError ? updateEnquiry.error.message : "Could not update this enquiry."}</p> : null}</div>
       <div className="divide-y divide-slate-100">
-        {(enquiries.data ?? []).map((enquiry) => <article key={enquiry.id} className="grid gap-5 p-5 lg:grid-cols-[1fr_320px]"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-lg font-black text-forest-950">{enquiry.service.title}</h3><span className="rounded-full bg-forest-50 px-2 py-1 text-xs font-black text-forest-800">{enquiry.status.replace("_", " ")}</span></div><p className="mt-2 text-sm font-bold text-slate-700">{enquiry.customer.name} · {enquiry.customer.email} · {enquiry.phone}</p><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{enquiry.message}</p><p className="mt-3 text-xs font-bold text-slate-500">Received {new Date(enquiry.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}</p></div><div className="space-y-3"><label className="block text-sm font-bold text-forest-950">Status<select id={`enquiry-status-${enquiry.id}`} defaultValue={enquiry.status} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">{statuses.map((status) => <option key={status} value={status}>{status.replace("_", " ")}</option>)}</select></label><label className="block text-sm font-bold text-forest-950">Internal notes<textarea value={enquiryNotes[enquiry.id] ?? enquiry.adminNotes ?? ""} onChange={(event) => setEnquiryNotes((current) => ({ ...current, [enquiry.id]: event.target.value }))} className="mt-1 min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 font-normal" placeholder="Call outcome, ownership, next step..." /></label><button type="button" disabled={updateEnquiry.isPending} onClick={() => { const select = document.getElementById(`enquiry-status-${enquiry.id}`) as HTMLSelectElement | null; updateEnquiry.mutate({ id: enquiry.id, status: (select?.value ?? enquiry.status) as ServiceEnquiryStatus, notes: enquiryNotes[enquiry.id] ?? enquiry.adminNotes ?? "" }); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-forest-600 px-4 text-sm font-black text-white disabled:opacity-50"><Save size={16} aria-hidden="true" /> Save follow-up</button></div></article>)}
+        {filteredEnquiries.map((enquiry) => <article key={enquiry.id} className="grid gap-5 p-5 lg:grid-cols-[1fr_320px]"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-lg font-black text-forest-950">{enquiry.service.title}</h3><span className="rounded-full bg-forest-50 px-2 py-1 text-xs font-black text-forest-800">{enquiry.status.replace("_", " ")}</span></div><p className="mt-2 text-sm font-bold text-slate-700">{enquiry.customer.name} · {enquiry.customer.email} · {enquiry.phone}</p><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{enquiry.message}</p><p className="mt-3 text-xs font-bold text-slate-500">Received {new Date(enquiry.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}</p></div><div className="space-y-3"><label className="block text-sm font-bold text-forest-950">Status<select id={`enquiry-status-${enquiry.id}`} defaultValue={enquiry.status} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">{statuses.map((status) => <option key={status} value={status}>{status.replace("_", " ")}</option>)}</select></label><label className="block text-sm font-bold text-forest-950">Internal notes<textarea value={enquiryNotes[enquiry.id] ?? enquiry.adminNotes ?? ""} onChange={(event) => setEnquiryNotes((current) => ({ ...current, [enquiry.id]: event.target.value }))} className="mt-1 min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 font-normal" placeholder="Call outcome, ownership, next step..." /></label><button type="button" disabled={updateEnquiry.isPending} onClick={() => { const select = document.getElementById(`enquiry-status-${enquiry.id}`) as HTMLSelectElement | null; updateEnquiry.mutate({ id: enquiry.id, status: (select?.value ?? enquiry.status) as ServiceEnquiryStatus, notes: enquiryNotes[enquiry.id] ?? enquiry.adminNotes ?? "" }); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-forest-600 px-4 text-sm font-black text-white disabled:opacity-50"><Save size={16} aria-hidden="true" /> Save follow-up</button></div></article>)}
         {enquiries.isLoading ? <p className="p-5 text-slate-600">Loading enquiries...</p> : null}
         {enquiries.isError ? <p className="p-5 font-bold text-red-700">Could not load enquiries.</p> : null}
         {!enquiries.isLoading && !enquiries.data?.length ? <p className="p-5 text-slate-600">No customer enquiries yet.</p> : null}
+        {!enquiries.isLoading && Boolean(enquiries.data?.length) && !filteredEnquiries.length ? <p className="p-5 text-slate-600">No enquiries match these filters.</p> : null}
       </div>
     </section>
   </div>;

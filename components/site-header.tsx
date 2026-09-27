@@ -48,23 +48,23 @@ export function SiteHeader() {
           <span className="leading-tight"><span className="block text-base font-black text-forest-950">ZD Crown</span><span className="block text-xs font-semibold text-forest-600">Agro Marketplace</span></span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+        <nav className="hidden items-center gap-1 xl:flex" aria-label="Primary navigation">
           <details className="group relative">
-            <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname.startsWith("/market-intelligence") ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}><BarChart3 size={17} aria-hidden="true" /> Market intel <ChevronDown size={15} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
+            <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname.startsWith("/market-intelligence") ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}><BarChart3 size={17} aria-hidden="true" /> Market intel <ChevronDown size={15} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
             <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-forest-100 bg-white p-2 shadow-soft">
               <Link href="/market-intelligence" className="flex min-h-11 items-center rounded-md px-3 font-black text-forest-900 hover:bg-forest-50">All intelligence</Link>
               {intelligenceNavigation.map(([Icon, label, type]) => <Link key={type} href={`/market-intelligence?type=${type}`} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold text-slate-700 hover:bg-forest-50"><Icon size={18} className="text-forest-600" aria-hidden="true" />{label}</Link>)}
             </div>
           </details>
           <details className="group relative">
-            <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname.startsWith("/services") ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}><Wrench size={17} aria-hidden="true" /> Services <ChevronDown size={15} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
+            <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname.startsWith("/services") ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}><Wrench size={17} aria-hidden="true" /> Services <ChevronDown size={15} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
             <div className="absolute left-0 top-full z-50 mt-2 grid w-[420px] grid-cols-2 rounded-lg border border-forest-100 bg-white p-2 shadow-soft">
               <Link href="/services" className="col-span-2 flex min-h-11 items-center rounded-md px-3 font-black text-forest-900 hover:bg-forest-50">All services</Link>
               {servicesNavigation.map(([Icon, label, category]) => <Link key={category} href={`/services?category=${category}`} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold text-slate-700 hover:bg-forest-50"><Icon size={18} className="text-forest-600" aria-hidden="true" />{label}</Link>)}
             </div>
           </details>
           {navigation.map(([label, href]) => (
-            <Link key={href} href={href} className={`rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname === href ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}>{label}</Link>
+            <Link key={href} href={href} className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname === href ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}>{label}</Link>
           ))}
         </nav>
 
@@ -76,12 +76,12 @@ export function SiteHeader() {
           </Link>
           {ready && !customer ? <Link href={`/login?returnTo=${encodeURIComponent(pathname)}`} className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex"><LogIn size={18} aria-hidden="true" /> Sign in</Link> : null}
           {customer ? <Link href="/account" className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-forest-800 transition hover:bg-forest-50 md:inline-flex" title={`Signed in as ${customer.email}`}><UserRound size={18} aria-hidden="true" /> {customer.name.split(" ")[0]}</Link> : null}
-          <button type="button" onClick={() => setMenuOpen((current) => !current)} className="inline-grid size-11 place-items-center rounded-md border border-forest-100 text-forest-900 lg:hidden" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="mobile-navigation">{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}</button>
+          <button type="button" onClick={() => setMenuOpen((current) => !current)} className="inline-grid size-11 place-items-center rounded-md border border-forest-100 text-forest-900 xl:hidden" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="mobile-navigation">{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}</button>
         </div>
       </div>
 
       {menuOpen ? (
-        <nav id="mobile-navigation" className="border-t border-forest-100 bg-white px-4 py-3 lg:hidden" aria-label="Mobile navigation">
+        <nav id="mobile-navigation" className="border-t border-forest-100 bg-white px-4 py-3 xl:hidden" aria-label="Mobile navigation">
           <div className="mx-auto grid max-w-7xl gap-1">
             <Link href="/market-intelligence" onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50"><BarChart3 size={18} aria-hidden="true" /> Market intelligence</Link>
             <div className="grid grid-cols-2 gap-1 border-b border-forest-100 pb-2 pl-3">{intelligenceNavigation.map(([Icon, label, type]) => <Link key={type} href={`/market-intelligence?type=${type}`} onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-slate-600 hover:bg-forest-50"><Icon size={16} className="text-forest-600" aria-hidden="true" />{label}</Link>)}</div>
