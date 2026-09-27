@@ -217,3 +217,58 @@ export type ServiceEnquiry = {
   service: Pick<ServiceListing, "id" | "title" | "slug" | "category">;
   customer: Pick<Customer, "id" | "name" | "email">;
 };
+
+export type InvestmentCategory =
+  | "FARMING_SEASON"
+  | "FRESH_PRODUCE"
+  | "GRAINS"
+  | "LIVESTOCK"
+  | "EXPORT_LOGISTICS"
+  | "WAREHOUSING"
+  | "PROCESSING";
+
+export type InvestmentOpportunity = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string;
+  category: InvestmentCategory;
+  location?: string | null;
+  imageUrl?: string | null;
+  fundingTarget?: number | null;
+  minimumInterestAmount?: number | null;
+  durationMonths?: number | null;
+  riskSummary: string;
+  featured: boolean;
+  openForInterest: boolean;
+  publishedAt?: string | null;
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { interests: number };
+};
+
+export type InvestmentsResponse = {
+  items: InvestmentOpportunity[];
+  counts: Partial<Record<InvestmentCategory, number>>;
+  locations: string[];
+};
+
+export type InvestorType = "INDIVIDUAL" | "BUSINESS" | "INSTITUTION" | "NGO" | "GOVERNMENT";
+export type InvestmentInterestStatus = "NEW" | "IN_REVIEW" | "CONTACTED" | "CLOSED";
+
+export type InvestmentInterest = {
+  id: string;
+  investorType: InvestorType;
+  organizationName?: string | null;
+  phone: string;
+  indicativeAmount?: number | null;
+  message: string;
+  status: InvestmentInterestStatus;
+  adminNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  opportunity: Pick<InvestmentOpportunity, "id" | "title" | "slug" | "category">;
+  customer: Pick<Customer, "id" | "name" | "email">;
+};

@@ -1,4 +1,4 @@
-import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse, ServiceCategory, ServiceEnquiry, ServiceEnquiryStatus, ServiceListing, ServicesResponse } from "@/lib/types";
+import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, InvestmentCategory, InvestmentInterest, InvestmentInterestStatus, InvestmentOpportunity, InvestmentsResponse, InvestorType, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse, ServiceCategory, ServiceEnquiry, ServiceEnquiryStatus, ServiceListing, ServicesResponse } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -62,6 +62,21 @@ export const api = {
   serviceBySlug: (slug: string) => request<ServiceListing>(`/services/${slug}`),
   createServiceEnquiry: (token: string, serviceId: string, payload: { phone: string; message: string }) =>
     request<{ id: string; status: ServiceEnquiryStatus; createdAt: string }>(`/services/${serviceId}/enquiries`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  investments: (filters: { category?: InvestmentCategory; search?: string; location?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.category) params.set("category", filters.category);
+    if (filters.search) params.set("search", filters.search);
+    if (filters.location) params.set("location", filters.location);
+    const query = params.toString();
+    return request<InvestmentsResponse>(`/investments${query ? `?${query}` : ""}`);
+  },
+  investmentBySlug: (slug: string) => request<InvestmentOpportunity>(`/investments/${slug}`),
+  expressInvestmentInterest: (token: string, opportunityId: string, payload: { investorType: InvestorType; organizationName?: string; phone: string; indicativeAmount?: number; message: string }) =>
+    request<{ id: string; status: InvestmentInterestStatus; createdAt: string }>(`/investments/${opportunityId}/interests`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload)
@@ -218,6 +233,37 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status, adminNotes })
     }),
+  adminInvestments: (token: string) =>
+    request<InvestmentOpportunity[]>("/admin/investments", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  createAdminInvestment: (token: string, payload: AdminInvestmentFormPayload) =>
+    request<InvestmentOpportunity>("/admin/investments", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  updateAdminInvestment: (token: string, id: string, payload: AdminInvestmentFormPayload) =>
+    request<InvestmentOpportunity>(`/admin/investments/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  setAdminInvestmentArchived: (token: string, id: string, archived: boolean) =>
+    request<{ ok: boolean }>(`/admin/investments/${id}/${archived ? "archive" : "unarchive"}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  adminInvestmentInterests: (token: string) =>
+    request<InvestmentInterest[]>("/admin/investment-interests", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  updateAdminInvestmentInterest: (token: string, id: string, status: InvestmentInterestStatus, adminNotes: string) =>
+    request<InvestmentInterest>(`/admin/investment-interests/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status, adminNotes })
+    }),
   adminOrders: (token: string) =>
     request<AdminOrder[]>("/admin/orders", {
       headers: { Authorization: `Bearer ${token}` }
@@ -239,6 +285,7 @@ export const api = {
 export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency" | "archivedAt">;
 export type AdminMarketInsightFormPayload = Omit<MarketInsight, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt"> & { published: boolean };
 export type AdminServiceFormPayload = Omit<ServiceListing, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt" | "_count"> & { published: boolean };
+export type AdminInvestmentFormPayload = Omit<InvestmentOpportunity, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt" | "_count"> & { published: boolean };
 
 export function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {

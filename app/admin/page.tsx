@@ -7,9 +7,10 @@ import { FormEvent, useMemo, useState } from "react";
 import { ApiError, api, formatNaira, type AdminMarketInsightFormPayload, type AdminProductFormPayload } from "@/lib/api";
 import type { AdminProduct, MarketInsight, MarketInsightType, OrderStatus } from "@/lib/types";
 import { AdminServicesPanel } from "@/components/admin-services-panel";
+import { AdminInvestmentsPanel } from "@/components/admin-investments-panel";
 
 type StatCard = [LucideIcon, string, string | number];
-type AdminTab = "overview" | "products" | "intelligence" | "services" | "orders";
+type AdminTab = "overview" | "products" | "intelligence" | "services" | "investments" | "orders";
 
 const emptyProduct: AdminProductFormPayload = {
   name: "",
@@ -220,7 +221,7 @@ export default function AdminPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap gap-2">
-          {(["overview", "products", "intelligence", "services", "orders"] as AdminTab[]).map((item) => (
+          {(["overview", "products", "intelligence", "services", "investments", "orders"] as AdminTab[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -354,6 +355,8 @@ export default function AdminPage() {
         ) : null}
 
         {tab === "services" ? <AdminServicesPanel token={token} /> : null}
+
+        {tab === "investments" ? <AdminInvestmentsPanel token={token} /> : null}
 
         {tab === "orders" ? (
           <section className="mt-6 rounded-lg border border-slate-200 bg-white">

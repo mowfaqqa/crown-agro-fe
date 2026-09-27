@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-store";
 import { useCart } from "@/lib/cart-store";
 
 const navigation = [
+  ["Invest", "/invest"],
   ["Marketplace", "/marketplace"],
   ["How it works", "/#how-it-works"],
   ["Trust", "/#trust"],
