@@ -1,14 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, BarChart3, Edit3, LockKeyhole, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
+import { Archive, BarChart3, Edit3, LockKeyhole, Newspaper, Package, Plus, RotateCcw, Save, ShieldCheck, ShoppingBag, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
-import { ApiError, api, formatNaira, type AdminProductFormPayload } from "@/lib/api";
-import type { AdminProduct, OrderStatus } from "@/lib/types";
+import { ApiError, api, formatNaira, type AdminMarketInsightFormPayload, type AdminProductFormPayload } from "@/lib/api";
+import type { AdminProduct, MarketInsight, MarketInsightType, OrderStatus } from "@/lib/types";
 
 type StatCard = [LucideIcon, string, string | number];
-type AdminTab = "overview" | "products" | "orders";
+type AdminTab = "overview" | "products" | "intelligence" | "orders";
 
 const emptyProduct: AdminProductFormPayload = {
   name: "",
@@ -38,6 +38,27 @@ const allowedNextStatuses: Record<OrderStatus, OrderStatus[]> = {
   CANCELLED: []
 };
 const categories: AdminProduct["category"][] = ["FRUITS", "GRAINS", "VEGETABLES", "LIVESTOCK", "POULTRY", "FISH", "EQUIPMENT", "PROCESSED_FOODS"];
+const insightTypes: { value: MarketInsightType; label: string }[] = [
+  { value: "COMMODITY_PRICE", label: "Commodity price" },
+  { value: "AGRICULTURE_NEWS", label: "Agriculture news" },
+  { value: "EXPORT_OPPORTUNITY", label: "Export opportunity" },
+  { value: "WEATHER_ADVISORY", label: "Weather advisory" }
+];
+const emptyInsight: AdminMarketInsightFormPayload = {
+  title: "",
+  slug: "",
+  summary: "",
+  content: "",
+  type: "AGRICULTURE_NEWS",
+  imageUrl: "",
+  location: "Nigeria",
+  commodity: "",
+  dataValue: "",
+  sourceName: "ZD Crown editorial team",
+  sourceUrl: "",
+  featured: false,
+  published: false
+};
 
 export default function AdminPage() {
   const queryClient = useQueryClient();
@@ -48,6 +69,8 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<AdminProductFormPayload>(emptyProduct);
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
+  const [editingInsightId, setEditingInsightId] = useState<string | null>(null);
+  const [insightForm, setInsightForm] = useState<AdminMarketInsightFormPayload>(emptyInsight);
 
   const login = useMutation({
     mutationFn: () => api.adminLogin(email, password),
@@ -56,6 +79,7 @@ export default function AdminPage() {
   const stats = useQuery({ queryKey: ["admin-stats", token], queryFn: () => api.adminStats(token ?? ""), enabled: Boolean(token) });
   const products = useQuery({ queryKey: ["admin-products", token], queryFn: () => api.adminProducts(token ?? ""), enabled: Boolean(token) });
   const orders = useQuery({ queryKey: ["admin-orders", token], queryFn: () => api.adminOrders(token ?? ""), enabled: Boolean(token) });
+  const intelligence = useQuery({ queryKey: ["admin-market-intelligence", token], queryFn: () => api.adminMarketIntelligence(token ?? ""), enabled: Boolean(token) });
 
   const saveProduct = useMutation({
     mutationFn: () => (editingId ? api.updateAdminProduct(token ?? "", editingId, productForm) : api.createAdminProduct(token ?? "", productForm)),
@@ -93,6 +117,18 @@ export default function AdminPage() {
       ]);
     }
   });
+  const saveInsight = useMutation({
+    mutationFn: () => editingInsightId ? api.updateAdminMarketInsight(token ?? "", editingInsightId, insightForm) : api.createAdminMarketInsight(token ?? "", insightForm),
+    onSuccess: async () => {
+      setEditingInsightId(null);
+      setInsightForm(emptyInsight);
+      await queryClient.invalidateQueries({ queryKey: ["admin-market-intelligence", token] });
+    }
+  });
+  const archiveInsight = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) => api.setAdminMarketInsightArchived(token ?? "", id, archived),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["admin-market-intelligence", token] })
+  });
 
   const lowStock = useMemo(() => products.data?.filter((product) => !product.archivedAt && product.stockQuantity <= 20) ?? [], [products.data]);
 
@@ -119,6 +155,26 @@ export default function AdminPage() {
     setTab("products");
   }
 
+  function editInsight(insight: MarketInsight) {
+    setEditingInsightId(insight.id);
+    setInsightForm({
+      title: insight.title,
+      slug: insight.slug,
+      summary: insight.summary,
+      content: insight.content,
+      type: insight.type,
+      imageUrl: insight.imageUrl ?? "",
+      location: insight.location ?? "",
+      commodity: insight.commodity ?? "",
+      dataValue: insight.dataValue ?? "",
+      sourceName: insight.sourceName ?? "",
+      sourceUrl: insight.sourceUrl ?? "",
+      featured: insight.featured,
+      published: Boolean(insight.publishedAt)
+    });
+    setTab("intelligence");
+  }
+
   if (!token) {
     return (
       <main className="grid min-h-dvh place-items-center bg-forest-950 px-4 py-12 text-white">
@@ -127,7 +183,7 @@ export default function AdminPage() {
             <LockKeyhole size={24} aria-hidden="true" />
           </div>
           <h1 className="mt-5 text-3xl font-black">Admin dashboard</h1>
-          <p className="mt-2 leading-6 text-slate-600">Sign in to manage products, inventory, and order requests.</p>
+          <p className="mt-2 leading-6 text-slate-600">Sign in to manage products, orders, and published content.</p>
           <form
             className="mt-6 space-y-4"
             onSubmit={(event) => {
@@ -163,7 +219,7 @@ export default function AdminPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap gap-2">
-          {(["overview", "products", "orders"] as AdminTab[]).map((item) => (
+          {(["overview", "products", "intelligence", "orders"] as AdminTab[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -268,6 +324,29 @@ export default function AdminPage() {
                   </article>
                 ))}
                 {!products.data?.length ? <p className="p-5 text-slate-600">No products yet.</p> : null}
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {tab === "intelligence" ? (
+          <div className="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
+            <MarketInsightForm
+              form={insightForm}
+              editingId={editingInsightId}
+              pending={saveInsight.isPending}
+              error={saveInsight.isError ? (saveInsight.error instanceof ApiError ? saveInsight.error.message : "Could not save this update.") : undefined}
+              onChange={setInsightForm}
+              onSubmit={(event) => { event.preventDefault(); saveInsight.mutate(); }}
+              onCancel={() => { setEditingInsightId(null); setInsightForm(emptyInsight); }}
+            />
+            <section className="rounded-lg border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 p-5"><h2 className="text-xl font-black text-forest-950">Intelligence library</h2><p className="mt-1 text-sm text-slate-600">Manage drafts, sources, featured updates, and archived entries.</p></div>
+              <div className="divide-y divide-slate-100">
+                {(intelligence.data ?? []).map((insight) => <article key={insight.id} className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-lg font-black text-forest-950">{insight.title}</h3><span className={`rounded-full px-2 py-1 text-xs font-black ${insight.archivedAt ? "bg-slate-100 text-slate-700" : insight.publishedAt ? "bg-forest-50 text-forest-800" : "bg-amber-100 text-amber-900"}`}>{insight.archivedAt ? "Archived" : insight.publishedAt ? "Published" : "Draft"}</span>{insight.featured ? <span className="rounded-full bg-harvest-100 px-2 py-1 text-xs font-black text-forest-950">Featured</span> : null}</div><p className="mt-1 text-sm font-bold text-forest-600">{insightTypes.find((item) => item.value === insight.type)?.label}</p><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{insight.summary}</p></div><div className="flex gap-2"><button type="button" onClick={() => editInsight(insight)} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold"><Edit3 size={16} aria-hidden="true" /> Edit</button><button type="button" onClick={() => archiveInsight.mutate({ id: insight.id, archived: !insight.archivedAt })} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-slate-50 px-3 text-sm font-bold text-slate-700">{insight.archivedAt ? <RotateCcw size={16} aria-hidden="true" /> : <Archive size={16} aria-hidden="true" />}{insight.archivedAt ? "Restore" : "Archive"}</button></div></article>)}
+                {intelligence.isLoading ? <p className="p-5 text-slate-600">Loading intelligence...</p> : null}
+                {intelligence.isError ? <p className="p-5 font-bold text-red-700">Could not load market intelligence.</p> : null}
+                {!intelligence.isLoading && !intelligence.data?.length ? <p className="p-5 text-slate-600">No intelligence entries yet. Create the first draft.</p> : null}
               </div>
             </section>
           </div>
@@ -433,24 +512,57 @@ function ProductForm({
   );
 }
 
+function MarketInsightForm({ form, editingId, pending, error, onChange, onSubmit, onCancel }: {
+  form: AdminMarketInsightFormPayload;
+  editingId: string | null;
+  pending: boolean;
+  error?: string;
+  onChange: (value: AdminMarketInsightFormPayload) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onCancel: () => void;
+}) {
+  function setField<K extends keyof AdminMarketInsightFormPayload>(key: K, value: AdminMarketInsightFormPayload[K]) {
+    onChange({ ...form, [key]: value });
+  }
+
+  return <form className="h-fit rounded-lg border border-slate-200 bg-white p-5" onSubmit={onSubmit}>
+    <div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-md bg-forest-600 text-white"><Newspaper size={20} aria-hidden="true" /></div><div><h2 className="text-xl font-black text-forest-950">{editingId ? "Edit intelligence" : "New intelligence"}</h2><p className="text-sm text-slate-600">Publish only verified, current information.</p></div></div>
+    <div className="mt-5 grid gap-4">
+      <label className="block text-sm font-bold text-forest-950">Type<select value={form.type} onChange={(event) => setField("type", event.target.value as MarketInsightType)} className="mt-1 min-h-11 w-full rounded-md border border-slate-200 px-3">{insightTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
+      <TextField label="Title" value={form.title} onChange={(value) => setField("title", value)} />
+      <TextField label="Slug" value={form.slug} onChange={(value) => setField("slug", value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))} />
+      <label className="block text-sm font-bold text-forest-950">Summary<textarea required minLength={20} maxLength={360} value={form.summary} onChange={(event) => setField("summary", event.target.value)} className="mt-1 min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 font-normal" /></label>
+      <label className="block text-sm font-bold text-forest-950">Full update<textarea required minLength={40} maxLength={12000} value={form.content} onChange={(event) => setField("content", event.target.value)} className="mt-1 min-h-48 w-full rounded-md border border-slate-200 px-3 py-2 font-normal" /><span className="mt-1 block text-xs font-normal text-slate-500">Separate paragraphs with a blank line.</span></label>
+      <TextField label="Image URL" type="url" required={false} value={form.imageUrl ?? ""} onChange={(value) => setField("imageUrl", value)} />
+      <div className="grid gap-4 sm:grid-cols-2"><TextField label="Location" required={false} value={form.location ?? ""} onChange={(value) => setField("location", value)} /><TextField label="Commodity" required={false} value={form.commodity ?? ""} onChange={(value) => setField("commodity", value)} /><TextField label="Key value or headline" required={false} value={form.dataValue ?? ""} onChange={(value) => setField("dataValue", value)} /><TextField label="Source name" required={false} value={form.sourceName ?? ""} onChange={(value) => setField("sourceName", value)} /></div>
+      <TextField label="Source URL" type="url" required={false} value={form.sourceUrl ?? ""} onChange={(value) => setField("sourceUrl", value)} />
+      <div className="grid gap-3 sm:grid-cols-2"><CheckField label="Featured" checked={form.featured} onChange={(value) => setField("featured", value)} /><CheckField label="Published" checked={form.published} onChange={(value) => setField("published", value)} /></div>
+      {error ? <p role="alert" className="rounded-md bg-red-50 p-3 text-sm font-bold text-red-800">{error}</p> : null}
+    </div>
+    <div className="mt-5 flex gap-2"><button type="submit" disabled={pending} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-forest-600 px-4 font-black text-white disabled:opacity-50"><Save size={17} aria-hidden="true" />{pending ? "Saving..." : form.published ? "Save and publish" : "Save draft"}</button>{editingId ? <button type="button" onClick={onCancel} className="min-h-11 rounded-md border border-slate-200 px-4 font-bold">Cancel</button> : null}</div>
+  </form>;
+}
+
 function TextField({
   label,
   value,
   onChange,
   type = "text",
-  autoComplete
+  autoComplete,
+  required = true
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: string;
   autoComplete?: string;
+  required?: boolean;
 }) {
   return (
     <label className="block text-sm font-bold text-forest-950">
       {label}
       <input
-        required
+        required={required}
         type={type}
         autoComplete={autoComplete}
         value={value}

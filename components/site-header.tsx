@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LogIn, LogOut, Menu, Search, ShoppingCart, Sprout, UserRound, X } from "lucide-react";
+import { BarChart3, ChevronDown, CloudSun, LayoutDashboard, LogIn, LogOut, Menu, Newspaper, Search, Ship, ShoppingCart, Sprout, TrendingUp, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -11,9 +11,15 @@ const navigation = [
   ["Marketplace", "/marketplace"],
   ["How it works", "/#how-it-works"],
   ["Trust", "/#trust"],
-  ["Live hub", "/#live-hub"],
   ["Track order", "/orders/lookup"]
 ];
+
+const intelligenceNavigation = [
+  [TrendingUp, "Commodity prices", "COMMODITY_PRICE"],
+  [Newspaper, "Agriculture news", "AGRICULTURE_NEWS"],
+  [Ship, "Export opportunities", "EXPORT_OPPORTUNITY"],
+  [CloudSun, "Weather advisories", "WEATHER_ADVISORY"]
+] as const;
 
 export function SiteHeader() {
   const { totalItems } = useCart();
@@ -31,6 +37,13 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+          <details className="group relative">
+            <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname.startsWith("/market-intelligence") ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}><BarChart3 size={17} aria-hidden="true" /> Market intel <ChevronDown size={15} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
+            <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-forest-100 bg-white p-2 shadow-soft">
+              <Link href="/market-intelligence" className="flex min-h-11 items-center rounded-md px-3 font-black text-forest-900 hover:bg-forest-50">All intelligence</Link>
+              {intelligenceNavigation.map(([Icon, label, type]) => <Link key={type} href={`/market-intelligence?type=${type}`} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold text-slate-700 hover:bg-forest-50"><Icon size={18} className="text-forest-600" aria-hidden="true" />{label}</Link>)}
+            </div>
+          </details>
           {navigation.map(([label, href]) => (
             <Link key={href} href={href} className={`rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-forest-50 hover:text-forest-800 ${pathname === href ? "bg-forest-50 text-forest-800" : "text-slate-700"}`}>{label}</Link>
           ))}
@@ -51,6 +64,8 @@ export function SiteHeader() {
       {menuOpen ? (
         <nav id="mobile-navigation" className="border-t border-forest-100 bg-white px-4 py-3 lg:hidden" aria-label="Mobile navigation">
           <div className="mx-auto grid max-w-7xl gap-1">
+            <Link href="/market-intelligence" onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50"><BarChart3 size={18} aria-hidden="true" /> Market intelligence</Link>
+            <div className="grid grid-cols-2 gap-1 border-b border-forest-100 pb-2 pl-3">{intelligenceNavigation.map(([Icon, label, type]) => <Link key={type} href={`/market-intelligence?type=${type}`} onClick={() => setMenuOpen(false)} className="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-slate-600 hover:bg-forest-50"><Icon size={16} className="text-forest-600" aria-hidden="true" />{label}</Link>)}</div>
             {navigation.map(([label, href]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50">{label}</Link>)}
             <Link href="/admin" onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50"><LayoutDashboard size={18} aria-hidden="true" /> Admin</Link>
             {customer ? <><Link href="/account" onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md px-3 font-bold text-slate-700 hover:bg-forest-50"><UserRound size={18} aria-hidden="true" /> My account</Link><button type="button" onClick={() => { signOut(); setMenuOpen(false); }} className="flex min-h-12 items-center gap-2 rounded-md px-3 text-left font-bold text-red-700 hover:bg-red-50"><LogOut size={18} aria-hidden="true" /> Sign out {customer.name.split(" ")[0]}</button></> : <Link href={`/login?returnTo=${encodeURIComponent(pathname)}`} onClick={() => setMenuOpen(false)} className="flex min-h-12 items-center gap-2 rounded-md bg-forest-600 px-3 font-bold text-white"><LogIn size={18} aria-hidden="true" /> Sign in or register</Link>}

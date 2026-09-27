@@ -142,3 +142,30 @@ export type OrderConfirmation = {
 };
 
 export type OrderDetails = AdminOrder;
+
+export type MarketInsightType = "COMMODITY_PRICE" | "AGRICULTURE_NEWS" | "EXPORT_OPPORTUNITY" | "WEATHER_ADVISORY";
+
+export type MarketInsight = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  type: MarketInsightType;
+  imageUrl?: string | null;
+  location?: string | null;
+  commodity?: string | null;
+  dataValue?: string | null;
+  sourceName?: string | null;
+  sourceUrl?: string | null;
+  featured: boolean;
+  publishedAt?: string | null;
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MarketIntelligenceResponse = {
+  items: MarketInsight[];
+  counts: Partial<Record<MarketInsightType, number>>;
+};

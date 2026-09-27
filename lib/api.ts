@@ -1,4 +1,4 @@
-import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse } from "@/lib/types";
+import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -43,6 +43,14 @@ export const api = {
     return request<ProductResponse>(`/products${query ? `?${query}` : ""}`);
   },
   productBySlug: (slug: string) => request<Product>(`/products/${slug}`),
+  marketIntelligence: (filters: { type?: MarketInsightType; search?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.type) params.set("type", filters.type);
+    if (filters.search) params.set("search", filters.search);
+    const query = params.toString();
+    return request<MarketIntelligenceResponse>(`/market-intelligence${query ? `?${query}` : ""}`);
+  },
+  marketInsightBySlug: (slug: string) => request<MarketInsight>(`/market-intelligence/${slug}`),
   createOrder: (token: string, payload: OrderPayload) =>
     request<OrderConfirmation>("/orders", {
       method: "POST",
@@ -143,6 +151,27 @@ export const api = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` }
     }),
+  adminMarketIntelligence: (token: string) =>
+    request<MarketInsight[]>("/admin/market-intelligence", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  createAdminMarketInsight: (token: string, payload: AdminMarketInsightFormPayload) =>
+    request<MarketInsight>("/admin/market-intelligence", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  updateAdminMarketInsight: (token: string, id: string, payload: AdminMarketInsightFormPayload) =>
+    request<MarketInsight>(`/admin/market-intelligence/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  setAdminMarketInsightArchived: (token: string, id: string, archived: boolean) =>
+    request<{ ok: boolean }>(`/admin/market-intelligence/${id}/${archived ? "archive" : "unarchive"}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
   adminOrders: (token: string) =>
     request<AdminOrder[]>("/admin/orders", {
       headers: { Authorization: `Bearer ${token}` }
@@ -162,6 +191,7 @@ export const api = {
 };
 
 export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency" | "archivedAt">;
+export type AdminMarketInsightFormPayload = Omit<MarketInsight, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt"> & { published: boolean };
 
 export function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {

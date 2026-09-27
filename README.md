@@ -31,6 +31,8 @@ The app runs on `http://localhost:3000` by default and expects the backend at `N
 - Dedicated product, cart, checkout, and order lookup pages
 - Newsletter capture
 - Admin JWT login, product management, and controlled order fulfillment
+- Admin-managed market intelligence with draft, publish, feature, and archive states
+- Public market intelligence search, category filters, and detail pages
 - Loading, empty, and backend-offline recovery states
 
-Next milestones should add broader automated tests, managed image uploads, and Paystack checkout.
+Next milestones should add the services directory and enquiry workflow, investment opportunity expressions of interest, broader automated tests, managed image uploads, and Paystack checkout.
