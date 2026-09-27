@@ -1,4 +1,4 @@
-import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse } from "@/lib/types";
+import type { AdminOrder, AdminProduct, Customer, CustomerSession, DashboardStats, MarketInsight, MarketIntelligenceResponse, MarketInsightType, OrderConfirmation, OrderDetails, OrderPayload, OrderStatus, Product, ProductFilters, ProductResponse, ServiceCategory, ServiceEnquiry, ServiceEnquiryStatus, ServiceListing, ServicesResponse } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -51,6 +51,21 @@ export const api = {
     return request<MarketIntelligenceResponse>(`/market-intelligence${query ? `?${query}` : ""}`);
   },
   marketInsightBySlug: (slug: string) => request<MarketInsight>(`/market-intelligence/${slug}`),
+  services: (filters: { category?: ServiceCategory; search?: string; location?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.category) params.set("category", filters.category);
+    if (filters.search) params.set("search", filters.search);
+    if (filters.location) params.set("location", filters.location);
+    const query = params.toString();
+    return request<ServicesResponse>(`/services${query ? `?${query}` : ""}`);
+  },
+  serviceBySlug: (slug: string) => request<ServiceListing>(`/services/${slug}`),
+  createServiceEnquiry: (token: string, serviceId: string, payload: { phone: string; message: string }) =>
+    request<{ id: string; status: ServiceEnquiryStatus; createdAt: string }>(`/services/${serviceId}/enquiries`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
   createOrder: (token: string, payload: OrderPayload) =>
     request<OrderConfirmation>("/orders", {
       method: "POST",
@@ -172,6 +187,37 @@ export const api = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` }
     }),
+  adminServices: (token: string) =>
+    request<ServiceListing[]>("/admin/services", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  createAdminService: (token: string, payload: AdminServiceFormPayload) =>
+    request<ServiceListing>("/admin/services", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  updateAdminService: (token: string, id: string, payload: AdminServiceFormPayload) =>
+    request<ServiceListing>(`/admin/services/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    }),
+  setAdminServiceArchived: (token: string, id: string, archived: boolean) =>
+    request<{ ok: boolean }>(`/admin/services/${id}/${archived ? "archive" : "unarchive"}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  adminServiceEnquiries: (token: string) =>
+    request<ServiceEnquiry[]>("/admin/service-enquiries", {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  updateAdminServiceEnquiry: (token: string, id: string, status: ServiceEnquiryStatus, adminNotes: string) =>
+    request<ServiceEnquiry>(`/admin/service-enquiries/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status, adminNotes })
+    }),
   adminOrders: (token: string) =>
     request<AdminOrder[]>("/admin/orders", {
       headers: { Authorization: `Bearer ${token}` }
@@ -192,6 +238,7 @@ export const api = {
 
 export type AdminProductFormPayload = Omit<AdminProduct, "id" | "currency" | "archivedAt">;
 export type AdminMarketInsightFormPayload = Omit<MarketInsight, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt"> & { published: boolean };
+export type AdminServiceFormPayload = Omit<ServiceListing, "id" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt" | "_count"> & { published: boolean };
 
 export function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {

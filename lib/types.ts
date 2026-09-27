@@ -169,3 +169,51 @@ export type MarketIntelligenceResponse = {
   items: MarketInsight[];
   counts: Partial<Record<MarketInsightType, number>>;
 };
+
+export type ServiceCategory =
+  | "EQUIPMENT_RENTAL"
+  | "JOB_BOARD"
+  | "TRAINING"
+  | "EXPORT_LOGISTICS"
+  | "INPUT_SUPPLY"
+  | "WAREHOUSING"
+  | "SMART_FARMING"
+  | "COMMUNITY";
+
+export type ServiceListing = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string;
+  category: ServiceCategory;
+  providerName: string;
+  location?: string | null;
+  imageUrl?: string | null;
+  featured: boolean;
+  publishedAt?: string | null;
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { enquiries: number };
+};
+
+export type ServicesResponse = {
+  items: ServiceListing[];
+  counts: Partial<Record<ServiceCategory, number>>;
+  locations: string[];
+};
+
+export type ServiceEnquiryStatus = "NEW" | "IN_REVIEW" | "CONTACTED" | "CLOSED";
+
+export type ServiceEnquiry = {
+  id: string;
+  phone: string;
+  message: string;
+  status: ServiceEnquiryStatus;
+  adminNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  service: Pick<ServiceListing, "id" | "title" | "slug" | "category">;
+  customer: Pick<Customer, "id" | "name" | "email">;
+};
