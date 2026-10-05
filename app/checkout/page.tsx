@@ -80,7 +80,7 @@ export default function CheckoutPage() {
               </div>
             </div>
             <p className="mt-4 max-w-2xl leading-7 text-slate-600">
-              Signed in as {customer.name} ({customer.email}). Confirm delivery details and ZD Crown will follow up with availability and payment instructions.
+              Signed in as {customer.name} ({customer.email}). Confirm delivery details; once ZD Crown approves availability, secure Paystack payment will appear in your account.
             </p>
 
             {order.isSuccess ? (
@@ -180,7 +180,7 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span>{formatNaira(subtotal)}</span>
                 </div>
-                <p className="rounded-md bg-harvest-100 p-3 text-sm font-bold text-forest-950">Payment is not collected yet. Paystack will be introduced in a later milestone.</p>
+                <p className="rounded-md bg-harvest-100 p-3 text-sm font-bold text-forest-950">No payment is collected with this request. After availability is confirmed, pay securely with Paystack from your account.</p>
               </div>
             )}
           </aside>

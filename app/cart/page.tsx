@@ -103,7 +103,7 @@ export default function CartPage() {
                 <span>{formatNaira(subtotal)}</span>
               </div>
               <p className="rounded-md bg-harvest-100 p-3 text-sm font-bold text-forest-950">
-                Payment is not collected yet. Checkout submits an order request for admin follow-up.
+                Checkout submits an order request first. Paystack payment opens in your account after ZD Crown confirms availability.
               </p>
               <Link
                 href="/checkout"

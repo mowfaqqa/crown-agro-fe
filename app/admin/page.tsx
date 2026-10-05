@@ -8,6 +8,7 @@ import { ApiError, api, formatNaira, type AdminMarketInsightFormPayload, type Ad
 import type { AdminProduct, MarketInsight, MarketInsightType, OrderStatus } from "@/lib/types";
 import { AdminServicesPanel } from "@/components/admin-services-panel";
 import { AdminInvestmentsPanel } from "@/components/admin-investments-panel";
+import { AdminImageUpload } from "@/components/admin-image-upload";
 
 type StatCard = [LucideIcon, string, string | number];
 type AdminTab = "overview" | "products" | "intelligence" | "services" | "investments" | "orders";
@@ -22,7 +23,7 @@ const emptyProduct: AdminProductFormPayload = {
   countryOfOrigin: "Nigeria",
   stockQuantity: 0,
   unit: "Bag",
-  imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=900&q=80",
+  imageUrl: "",
   halalCertified: true,
   exportCertified: false,
   featured: false,
@@ -33,8 +34,8 @@ const emptyProduct: AdminProductFormPayload = {
 
 const allowedNextStatuses: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["AWAITING_PAYMENT", "CANCELLED"],
-  AWAITING_PAYMENT: ["PAID", "CANCELLED"],
+  CONFIRMED: ["CANCELLED"],
+  AWAITING_PAYMENT: [],
   PAID: ["FULFILLED"],
   FULFILLED: [],
   CANCELLED: []
@@ -278,6 +279,7 @@ export default function AdminPage() {
         {tab === "products" ? (
           <div className="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
             <ProductForm
+              token={token}
               form={productForm}
               editingId={editingId}
               pending={saveProduct.isPending}
@@ -437,6 +439,7 @@ export default function AdminPage() {
 }
 
 function ProductForm({
+  token,
   form,
   editingId,
   pending,
@@ -444,6 +447,7 @@ function ProductForm({
   onSubmit,
   onCancel
 }: {
+  token: string;
   form: AdminProductFormPayload;
   editingId: string | null;
   pending: boolean;
@@ -474,7 +478,7 @@ function ProductForm({
         <TextField label="Unit" value={form.unit} onChange={(value) => setField("unit", value)} />
         <TextField label="Seller name" value={form.sellerName} onChange={(value) => setField("sellerName", value)} />
         <TextField label="Seller country" value={form.sellerCountry} onChange={(value) => setField("sellerCountry", value)} />
-        <TextField label="Image URL" type="url" value={form.imageUrl} onChange={(value) => setField("imageUrl", value)} />
+        <AdminImageUpload token={token} scope="products" value={form.imageUrl} required onChange={(value) => setField("imageUrl", value)} />
         <div className="grid gap-4 sm:grid-cols-2">
           <NumberField label="Price" value={form.price} onChange={(value) => setField("price", value)} />
           <NumberField label="Compare at price" value={form.compareAtPrice ?? 0} onChange={(value) => setField("compareAtPrice", value || undefined)} />
@@ -507,7 +511,7 @@ function ProductForm({
         </div>
       </div>
       <div className="mt-5 flex gap-2">
-        <button type="submit" disabled={pending} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-forest-600 px-4 font-black text-white disabled:opacity-50">
+        <button type="submit" disabled={pending || !form.imageUrl} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-forest-600 px-4 font-black text-white disabled:opacity-50">
           <Save size={17} aria-hidden="true" /> {pending ? "Saving..." : "Save product"}
         </button>
         {editingId ? (

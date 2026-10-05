@@ -9,13 +9,12 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (!(init?.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
-    }
+    headers
   });
 
   if (!response.ok) {
@@ -86,6 +85,17 @@ export const api = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload)
+    }),
+  initializeOrderPayment: (token: string, orderId: string) =>
+    request<{ authorizationUrl: string; reference: string }>(`/orders/${orderId}/payment/initialize`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  verifyOrderPayment: (token: string, orderId: string, reference: string) =>
+    request<{ id: string; orderNumber: string; status: OrderStatus; paidAt?: string | null }>(`/orders/${orderId}/payment/verify`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reference })
     }),
   registerCustomer: (name: string, email: string, password: string) =>
     request<CustomerSession>("/auth/customer/register", {
@@ -167,6 +177,15 @@ export const api = {
     request<AdminProduct[]>("/admin/products", {
       headers: { Authorization: `Bearer ${token}` }
     }),
+  uploadAdminImage: (token: string, scope: "products" | "services" | "opportunities", file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request<{ key: string; url: string }>(`/admin/uploads/images/${scope}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body
+    });
+  },
   createAdminProduct: (token: string, payload: AdminProductFormPayload) =>
     request<AdminProduct>("/admin/products", {
       method: "POST",
